@@ -49,7 +49,7 @@ if "type" in merged_df.columns:
         .astype(int)
     )
 else:
-    print("⚠️ 'type' column not found in merged data")
+    print(" 'type' column not found in merged data")
 
 # ===============================
 # SAVE OUTPUT

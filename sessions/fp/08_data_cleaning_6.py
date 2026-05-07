@@ -21,7 +21,7 @@ def to_dt(t):
         hh, mm, ss = map(int, t.split(":"))
         return timedelta(hours=hh, minutes=mm, seconds=ss)
     except Exception as e:
-        print(f"⚠️ Invalid time format: {t}")
+        print(f" Invalid time format: {t}")
         return None
 
 def to_str(dt):
@@ -121,4 +121,4 @@ final_df = final_df[
 
 final_df.to_csv(OUTPUT_CSV, index=False)
 
-print(f"✅ Member-grouped sessions written to {OUTPUT_CSV}")
+print(f" Member-grouped sessions written to {OUTPUT_CSV}")

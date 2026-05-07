@@ -334,11 +334,11 @@ def fetch_events_from_postgres(start_date_str, end_date_str, db_config):
       AND timestamp BETWEEN {start_ts} AND {end_ts}
     ORDER BY hhid ASC, timestamp ASC;
     """
-    print(f"📌 Querying events from {start_dt_local} to {end_dt_local} (UNIX: {start_ts} → {end_ts})")
+    print(f" Querying events from {start_dt_local} to {end_dt_local} (UNIX: {start_ts} → {end_ts})")
     conn = psycopg2.connect(**db_config)
     df = pd.read_sql(query, conn)
     conn.close()
-    print(f"✅ Fetched {len(df)} rows from events_with_assigned_hhid table")
+    print(f" Fetched {len(df)} rows from events_with_assigned_hhid table")
     return df
 
 
@@ -465,7 +465,7 @@ def deduplicate_type3_events(df: pd.DataFrame) -> pd.DataFrame:
     after = len(type3_df)
     removed = before - after
     if removed > 0:
-        print(f"✅ Deduplication: Removed {removed} type-3 duplicate(s) (kept higher id per hhid+timestamp)")
+        print(f" Deduplication: Removed {removed} type-3 duplicate(s) (kept higher id per hhid+timestamp)")
 
     return pd.concat([type3_df, other_df], ignore_index=True).sort_values(
         ['hhid', 'datetime_str']
@@ -963,22 +963,22 @@ def process_pipeline(start_date, end_date, db_config, output_dir):
     """
     Complete pipeline without intermediate files
     """
-    print("🚀 Starting end-to-end pipeline with member-wise sessions...")
+    print(" Starting end-to-end pipeline with member-wise sessions...")
     
     # Step 1: Fetch data from events_with_hhid table
     df = fetch_events_from_postgres(start_date, end_date, db_config)
     if df.empty:
-        print("❌ No data fetched, exiting.")
+        print(" No data fetched, exiting.")
         return
     
     # Step 2: Process data through pipeline
-    print("🔧 Processing data through pipeline...")
+    print(" Processing data through pipeline...")
     df = convert_timestamp(df)
     df = add_member_ids(df)  # This now also ensures details is JSON
     df = extract_channels(df)
     
     # Step 3: Split by date (02:00–01:59 rule) and process
-    print("📅 Splitting data by date (02:00–01:59)...")
+    print(" Splitting data by date (02:00–01:59)...")
     
     # Convert datetime_str to datetime
     df['datetime'] = pd.to_datetime(df['datetime_str'], errors='coerce')
@@ -991,7 +991,7 @@ def process_pipeline(start_date, end_date, db_config, output_dir):
     df['_file_date'] = df['datetime'].apply(get_file_date)
 
     # Deduplicate type 3 events before sessioning
-    print("🔍 Deduplicating type-3 events...")
+    print(" Deduplicating type-3 events...")
     df = deduplicate_type3_events(df)
     
     # Get configuration
@@ -1009,7 +1009,7 @@ def process_pipeline(start_date, end_date, db_config, output_dir):
         total_sessions += sessions_count
         print()
     
-    print(f"✅ Pipeline complete! Created {total_sessions} member-wise sessions.")
+    print(f" Pipeline complete! Created {total_sessions} member-wise sessions.")
 
 
 # ============================================================================
@@ -1019,12 +1019,22 @@ def process_pipeline(start_date, end_date, db_config, output_dir):
 if __name__ == "__main__":
     start_date = input("Enter start date (YYYY-MM-DD): ")
     end_date = input("Enter end date (YYYY-MM-DD): ")
+    import os
+    from dotenv import load_dotenv
+
+    # Get project root directory
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+
+    # Load .env file
+    load_dotenv(os.path.join(BASE_DIR, ".env"))
+
     db_config = {
-        'host': 'armenia-db-01.c960kiumy09x.ap-south-1.rds.amazonaws.com',
-        'port': 5432,
-        'dbname': 'meter01',
-        'user': 'postgres',
-        'password': 'inditronics123'
+        'host': os.getenv("DB_HOST"),
+        'port': int(os.getenv("DB_PORT", 5432)),
+        'dbname': os.getenv("DB_NAME"),
+        'user': os.getenv("DB_USER"),
+        'password': os.getenv("DB_PASSWORD")
     }
     
     OUTPUT_DIR = './household_viewership_memberwise_output_all_regions'
@@ -1032,4 +1042,4 @@ if __name__ == "__main__":
     # Run the complete pipeline
     process_pipeline(start_date, end_date, db_config, OUTPUT_DIR)
     
-    print("🎉 All processing complete!")
+    print(" All processing complete!")

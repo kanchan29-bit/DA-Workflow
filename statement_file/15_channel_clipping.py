@@ -30,15 +30,24 @@ BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
 RAW_FILE_PATH = os.path.join(BASE_DIR, "statement_file", "qualifier_output", f"{yesterday}_ruled.csv")
 
+from dotenv import load_dotenv
+
+# Get project root directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+
+# Load .env file
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
 # ============================================================
 # DATABASE CONFIG
 # ============================================================
 
-DB_HOST = "armenia-db-01.c960kiumy09x.ap-south-1.rds.amazonaws.com"
-DB_PORT = "5432"
-DB_NAME = "meter01"
-DB_USER = "postgres"
-DB_PASSWORD = "inditronics123"
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT", "5432")
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
 
 # ============================================================
 # LOAD RAW
@@ -572,5 +581,5 @@ OUTPUT_FILE = RAW_FILE_PATH.replace(".csv", "_PROCESSED.csv")
 
 final_output_df.to_csv(OUTPUT_FILE, index=False)
 
-print("✅ PROCESSED CSV GENERATED:", OUTPUT_FILE)
+print(" PROCESSED CSV GENERATED:", OUTPUT_FILE)
 

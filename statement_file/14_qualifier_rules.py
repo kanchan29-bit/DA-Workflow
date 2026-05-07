@@ -24,15 +24,24 @@ MAX_SESSION = 21600       # 6 hours
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+from dotenv import load_dotenv
+
+# Get project root directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+
+# Load .env file
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
 # ============================================================
 # DATABASE CONFIG
 # ============================================================
 db_config = {
-    'host': 'armenia-db-01.c960kiumy09x.ap-south-1.rds.amazonaws.com',
-    'port': 5432,
-    'dbname': 'meter01',
-    'user': 'postgres',
-    'password': 'inditronics123'
+    'host': os.getenv("DB_HOST"),
+    'port': int(os.getenv("DB_PORT", 5432)),
+    'dbname': os.getenv("DB_NAME"),
+    'user': os.getenv("DB_USER"),
+    'password': os.getenv("DB_PASSWORD")
 }
 
 # Create SQLAlchemy engine

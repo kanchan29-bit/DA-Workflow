@@ -8,10 +8,21 @@ from datetime import datetime
 # ============================================================
 # CONFIG
 # ============================================================
-EMAIL_USER = "kanchan.bishnoi@inditronics.com"
-EMAIL_PASS = "hnqj quqc lqmz pgmj" # App Password (NO spaces)
+from dotenv import load_dotenv
 
-IMAP_SERVER = "imap.gmail.com"
+# Get the current script's directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+
+# Load .env file
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+# ============================================================
+# CONFIG
+# ============================================================
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASS = os.getenv("EMAIL_PASS")
+IMAP_SERVER = os.getenv("IMAP_SERVER")
 
 # Get the current script's directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -75,9 +86,9 @@ for e_id in email_ids:
 # PROCESS LATEST EMAIL
 # ============================================================
 if latest_email is None:
-    print("❌ No email found for today with given subject.")
+    print(" No email found for today with given subject.")
 else:
-    print(f"✅ Processing latest email from: {latest_datetime}")
+    print(f" Processing latest email from: {latest_datetime}")
 
     for part in latest_email.walk():
         if part.get_content_maintype() == "multipart":
@@ -101,11 +112,11 @@ else:
             with zipfile.ZipFile(filepath, 'r') as zip_ref:
                 zip_ref.extractall(EXTRACT_DIR)
 
-            print(f"📂 Extracted: {filename}")
+            print(f" Extracted: {filename}")
 
 # ============================================================
 # CLEANUP
 # ============================================================
 mail.logout()
 
-print("🎯 Done.")
+print(" Done.")

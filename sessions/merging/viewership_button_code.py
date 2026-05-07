@@ -277,7 +277,7 @@ for RAW_FILE in RAW_FILES:
     formatted_date = extract_date(RAW_FILE)
 
     if not formatted_date:
-        print("⚠️ Date not found in filename, using today's date")
+        print(" Date not found in filename, using today's date")
         formatted_date = datetime.today().strftime("%d-%m-%Y")
 
     print("Using date:", formatted_date)

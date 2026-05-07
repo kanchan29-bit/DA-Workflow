@@ -18,7 +18,12 @@ output_file = os.path.join(BASE_DIR, "sessions", "merging", "main_reference.xlsx
 # =========================
 # LOAD FILES
 # =========================
+print(f"Reading input file: {input_file}")
 df_input = pd.read_csv(input_file)
+
+print(f"Reading main reference file: {main_file}")
+if not os.path.exists(main_file):
+    print(f"Error: Main reference file not found at {main_file}")
 df_main = pd.read_excel(main_file)
 
 # =========================
@@ -60,5 +65,5 @@ df_updated = pd.concat([df_main, df_input], ignore_index=True)
 # =========================
 df_updated.to_excel(output_file, index=False)
 
-print("✅ Data appended successfully (no header duplication)")
+print(" Data appended successfully (no header duplication)")
 print(f"Final rows: {len(df_updated)}")

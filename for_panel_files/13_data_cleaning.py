@@ -49,7 +49,7 @@ def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
     Shift values from s3_date column to date column, and from chname column to channel column.
     This function is called BEFORE any other processing.
     """
-    print("   🔄 Shifting column values (s3_date → date, chname → channel)...")
+    print("    Shifting column values (s3_date → date, chname → channel)...")
     
     # Shift s3_date to date column
     if 's3_date' in df.columns:
@@ -59,16 +59,16 @@ def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
             s3_date_valid = df['s3_date'].notna() & (df['s3_date'].astype(str).str.strip() != '')
             # Shift values from s3_date to date column
             df.loc[s3_date_valid, 'date'] = df.loc[s3_date_valid, 's3_date']
-            print(f"      ✅ Shifted {s3_date_valid.sum()} value(s) from s3_date to date column")
+            print(f"       Shifted {s3_date_valid.sum()} value(s) from s3_date to date column")
         else:
             # If date column doesn't exist, create it with s3_date values
             df['date'] = df['s3_date']
-            print(f"      ✅ Created date column with {df['s3_date'].notna().sum()} value(s) from s3_date")
+            print(f"       Created date column with {df['s3_date'].notna().sum()} value(s) from s3_date")
         
         # Optionally drop s3_date column after shifting
         # df = df.drop(columns=['s3_date'])
     else:
-        print("      ⚠️ s3_date column not found in dataframe")
+        print("       s3_date column not found in dataframe")
     
     # Shift chname to channel column
     if 'chname' in df.columns:
@@ -78,16 +78,16 @@ def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
             chname_valid = df['chname'].notna() & (df['chname'].astype(str).str.strip() != '')
             # Shift values from chname to channel column
             df.loc[chname_valid, 'channel'] = df.loc[chname_valid, 'chname']
-            print(f"      ✅ Shifted {chname_valid.sum()} value(s) from chname to channel column")
+            print(f"       Shifted {chname_valid.sum()} value(s) from chname to channel column")
         else:
             # If channel column doesn't exist, create it with chname values
             df['channel'] = df['chname']
-            print(f"      ✅ Created channel column with {df['chname'].notna().sum()} value(s) from chname")
+            print(f"       Created channel column with {df['chname'].notna().sum()} value(s) from chname")
         
         # Optionally drop chname column after shifting
         # df = df.drop(columns=['chname'])
     else:
-        print("      ⚠️ chname column not found in dataframe")
+        print("       chname column not found in dataframe")
     
     return df
 
@@ -152,13 +152,13 @@ def prompt_date(prompt_text: str):
         try:
             return datetime.strptime(val, "%Y-%m-%d").date()
         except ValueError:
-            print("❌ Invalid format. Please use YYYY-MM-DD")
+            print(" Invalid format. Please use YYYY-MM-DD")
 
 # ============================================================
 # Core Processing
 # ============================================================
 def process_file(file_path: str):
-    print(f"\n🔄 Processing: {file_path}")
+    print(f"\n Processing: {file_path}")
 
     df = pd.read_csv(file_path)
     original_rows = len(df)
@@ -169,7 +169,7 @@ def process_file(file_path: str):
     df = shift_columns(df)
 
     # --------------------------------------------------------
-    # 1. Assign channelid FIRST ✅
+    # 1. Assign channelid FIRST 
     # --------------------------------------------------------
     df["channelid"] = (
         df["channel"]
@@ -182,7 +182,7 @@ def process_file(file_path: str):
     )
 
     # --------------------------------------------------------
-    # 2. Remove unwanted channel IDs ✅
+    # 2. Remove unwanted channel IDs 
     # --------------------------------------------------------
     removed_count = df["channelid"].isin(CHANNELS_TO_REMOVE).sum()
     df = df[~df["channelid"].isin(CHANNELS_TO_REMOVE)]
@@ -231,8 +231,8 @@ def process_file(file_path: str):
     df.to_csv(output_file, index=False)
 
     print(
-        f"✅ Rows: {original_rows} → {cleaned_rows} | "
-        f"❌ Removed: {removed_count} | "
+        f" Rows: {original_rows} → {cleaned_rows} | "
+        f" Removed: {removed_count} | "
         f"Saved: {output_file}"
     )
 
@@ -240,7 +240,7 @@ def process_file(file_path: str):
 # MAIN - FIXED
 # ============================================================
 def main():
-    print("\n📅 Auto-processing D-1 files")
+    print("\n Auto-processing D-1 files")
 
     # --------------------------------------------------------
     # Get yesterday's date (as date object for comparison)
@@ -256,7 +256,7 @@ def main():
     all_files = glob.glob(os.path.join(INPUT_DIR, INPUT_PATTERN))
     files = []
 
-    print(f"\n📂 Checking {len(all_files)} file(s) in {INPUT_DIR}")
+    print(f"\n Checking {len(all_files)} file(s) in {INPUT_DIR}")
     
     for file_path in all_files:
         fname = os.path.basename(file_path)
@@ -265,17 +265,17 @@ def main():
 
         if file_date == yesterday:
             files.append(file_path)
-            print(f"      ✅ Matched: {fname}")
+            print(f"       Matched: {fname}")
         else:
             if file_date:
-                print(f"      ⏭️ Skipped (date: {file_date})")
+                print(f"       Skipped (date: {file_date})")
 
     if not files:
-        print(f"\n⚠️ No files found for {yesterday_str}")
+        print(f"\n No files found for {yesterday_str}")
         print(f"   Expected filename pattern: *{yesterday_str}*.csv")
         return
 
-    print(f"\n📂 {len(files)} file(s) found for processing")
+    print(f"\n {len(files)} file(s) found for processing")
 
     # --------------------------------------------------------
     # Process files
@@ -283,7 +283,7 @@ def main():
     for file_path in sorted(files):
         process_file(file_path)
 
-    print("\n🎉 D-1 processing completed successfully.")
+    print("\n D-1 processing completed successfully.")
 
 if __name__ == "__main__":
     main()

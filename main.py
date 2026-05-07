@@ -96,14 +96,14 @@ LOG_FILE = os.path.join("pipeline", "pipeline_log.txt")
 # FUNCTION: RUN SCRIPT
 # ============================================================
 def run_step(step):
-    print(f"\n▶ Running: {step['name']}")
+    print(f"\nRunning: {step['name']}")
     start_time = datetime.now()
 
     # Ensure the script path is absolute or correctly relative to the project root
     script_path = os.path.abspath(step["script"])
     
     if not os.path.exists(script_path):
-        raise Exception(f"❌ Script not found: {script_path}")
+        raise Exception(f"Script not found: {script_path}")
 
     result = subprocess.run([sys.executable, script_path])
 
@@ -113,15 +113,15 @@ def run_step(step):
     log(f"{step['name']} | Start: {start_time} | End: {end_time} | Duration: {duration} | Code: {result.returncode}")
 
     if result.returncode != 0:
-        raise Exception(f"❌ Script failed: {script_path}")
+        raise Exception(f"Script failed: {script_path}")
 
     # Optional output validation
     if step["check_file"]:
         check_path = os.path.abspath(step["check_file"])
         if not os.path.exists(check_path):
-            raise Exception(f"❌ Expected output not found: {check_path}")
+            raise Exception(f"Expected output not found: {check_path}")
 
-    print(f"✅ Completed: {step['name']}")
+    print(f"Completed: {step['name']}")
 
 # ============================================================
 # FUNCTION: LOGGING
@@ -132,22 +132,23 @@ def log(message):
     if log_dir and not os.path.exists(log_dir):
         os.makedirs(log_dir)
         
-    with open(LOG_FILE, "a") as f:
+    # Specify utf-8 encoding to avoid UnicodeEncodeError on Windows
+    with open(LOG_FILE, "a", encoding="utf-8") as f:
         f.write(message + "\n")
 
 # ============================================================
 # MAIN EXECUTION
 # ============================================================
 if __name__ == "__main__":
-    print("\n🚀 Starting Pipeline Execution\n")
+    print("\nStarting Pipeline Execution\n")
 
     try:
         for step in PIPELINE:
             run_step(step)
 
-        print("\n🎯 Pipeline completed successfully!")
+        print("\nPipeline completed successfully!")
 
     except Exception as e:
         print(str(e))
         log(f"ERROR: {str(e)}")
-        print("\n🛑 Pipeline stopped due to error.")
+        print("\nPipeline stopped due to error.")

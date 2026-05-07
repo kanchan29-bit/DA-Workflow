@@ -93,7 +93,7 @@ def process_file(RAW_FILE, type_filter, TYPE_TAG):
 
     input_dt = datetime.strptime(formatted_date, "%Y-%m-%d")
 
-    # 🔥 exact 30-day window
+    #  exact 30-day window
     start_dt = input_dt - pd.Timedelta(days=29)
     end_dt = input_dt
 
@@ -307,10 +307,10 @@ fp_file   = get_file_from_folder(FP_INPUT_PATH)
 if logo_file:
     process_file(logo_file, "29", "logo")
 else:
-    print("❌ Logo file not found for", date_str1)
+    print(" Logo file not found for", date_str1)
 
 # FP NEXT
 if fp_file:
     process_file(fp_file, "42", "FP")
 else:
-    print("❌ FP file not found for", date_str1)
+    print(" FP file not found for", date_str1)

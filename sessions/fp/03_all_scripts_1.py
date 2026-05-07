@@ -6,20 +6,26 @@ import os
 from datetime import datetime, timezone, timedelta
 import psycopg2
 
+from dotenv import load_dotenv
+
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+
+# Load .env file
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 INPUT_DIR = os.path.join(SCRIPT_DIR, "input_data")
 FINAL_OUTPUT_FILE = os.path.join(INPUT_DIR, "filtered.csv")
 
 DB_CONFIG = {
-    "host": "armenia-db-01.c960kiumy09x.ap-south-1.rds.amazonaws.com",
-    "port": 5432,
-    "user": "postgres",
-    "password": "inditronics123",
-    "dbname": "meter01"
+    "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT", 5432)),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "dbname": os.getenv("DB_NAME")
 }
 
 COLUMNS_TO_KEEP = [
@@ -61,11 +67,11 @@ missing_files = [f for f in expected_files if not os.path.exists(f)]
 
 if missing_files:
     raise FileNotFoundError(
-        f"❌ Missing {len(missing_files)} expected files:\n" +
+        f" Missing {len(missing_files)} expected files:\n" +
         "\n".join(missing_files)
     )
 
-print("✅ All expected files found")
+print(" All expected files found")
 
 # ==========================================================
 # STEP 1: READ FILES + CREATE UTC EPOCH
@@ -104,7 +110,7 @@ combined_df["device_id"] = (
     .str[0]
 )
 
-print("✅ device_id created")
+print(" device_id created")
 
 # ==========================================================
 # STEP 4: FETCH meter_id → hhid MAPPING
@@ -174,7 +180,7 @@ if "source_type" in combined_df.columns:
 final_df.to_csv(FINAL_OUTPUT_FILE, index=False)
 
 print("\n===================================")
-print("✅ PIPELINE COMPLETE")
+print(" PIPELINE COMPLETE")
 print(f"Final row count: {len(final_df)}")
 print(f"Output saved at: {FINAL_OUTPUT_FILE}")
 print("===================================")

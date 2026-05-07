@@ -154,4 +154,4 @@ final_df = final_df[base_cols + extra_cols]
 
 final_df.to_csv(OUTPUT_CSV, index=False)
 
-print(f"✅ Final channel-member sessions written to {OUTPUT_CSV}")
+print(f" Final channel-member sessions written to {OUTPUT_CSV}")
