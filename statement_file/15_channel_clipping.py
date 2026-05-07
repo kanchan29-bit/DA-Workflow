@@ -18,11 +18,17 @@ import psycopg2
 from datetime import datetime, timedelta
 import re
 
+import os
+
 # ============================================================
 # CONFIGURATION
 # ============================================================
+# Get project root directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
-RAW_FILE_PATH = rf"C:\Users\kanch\Desktop\statement\Statement File\qualifier_output\{yesterday}_ruled.csv"
+RAW_FILE_PATH = os.path.join(BASE_DIR, "statement_file", "qualifier_output", f"{yesterday}_ruled.csv")
 
 # ============================================================
 # DATABASE CONFIG

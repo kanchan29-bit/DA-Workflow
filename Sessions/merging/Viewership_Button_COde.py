@@ -8,27 +8,31 @@ import os
 import re
 from datetime import datetime, timedelta
 
+# Get project root directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+
 # ============================================================
 # INPUT RAW FILES (ADD AS MANY AS YOU WANT)
 # ============================================================
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 RAW_FILES = [
-    rf"C:\Users\kanch\Desktop\statement\Sessions\logo\household_viewership_memberwise_output\{yesterday}_logo_sessions.csv",
-    rf"C:\Users\kanch\Desktop\statement\Sessions\fp\output\{yesterday}_fp_sessions.csv"
+    os.path.join(BASE_DIR, "sessions", "logo", "household_viewership_memberwise_output", f"{yesterday}_logo_sessions.csv"),
+    os.path.join(BASE_DIR, "sessions", "fp", "output", f"{yesterday}_fp_sessions.csv")
 ]
 
 # ============================================================
 # EXCEL REFERENCE
 # ============================================================
 
-REF_FILE = r"C:\Users\kanch\Desktop\statement\Sessions\merging\main_reference.xlsx"
+REF_FILE = os.path.join(BASE_DIR, "sessions", "merging", "main_reference.xlsx")
 REF_SHEET = "Sheet1"
 
 # ============================================================
 # OUTPUT BASE PATH
 # ============================================================
 
-BASE_OUTPUT = r"C:\Users\kanch\Desktop\statement\Sessions\merging\sessions_with_rejuvenation"
+BASE_OUTPUT = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation")
 
 # ============================================================
 # USER INPUT

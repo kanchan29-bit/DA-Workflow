@@ -2,12 +2,15 @@ import pandas as pd
 import ast
 from datetime import datetime, timedelta
 
+import os
+
 # ===============================
 # CONFIG
 # ===============================
-CHANNEL_CSV = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\sessions_output.csv"     # channel-level sessions (already sessionized)
-MEMBER_CSV  = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\merged_timeline.csv"     # type=3 member declarations
-OUTPUT_CSV  = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\final_channel_member_sessions.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CHANNEL_CSV = os.path.join(SCRIPT_DIR, "output", "sessions_output.csv")     # channel-level sessions (already sessionized)
+MEMBER_CSV  = os.path.join(SCRIPT_DIR, "output", "merged_timeline.csv")     # type=3 member declarations
+OUTPUT_CSV  = os.path.join(SCRIPT_DIR, "output", "final_channel_member_sessions.csv")
 
 # ===============================
 # TIME HELPERS

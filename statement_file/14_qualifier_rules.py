@@ -8,11 +8,15 @@ from sqlalchemy import create_engine
 # ============================================================
 # CONFIG
 # ============================================================
+# Get project root directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
 
 # Use raw strings for Windows paths
-INPUT_PATTERN = fr"C:\Users\kanch\Desktop\statement\For Panel Files\For_Panel\{yesterday}_cleaned.csv"
-OUTPUT_DIR = r"C:\Users\kanch\Desktop\statement\Statement File\qualifier_output"
+INPUT_PATTERN = os.path.join(BASE_DIR, "for_panel_files", "for_panel", f"{yesterday}_cleaned.csv")
+OUTPUT_DIR = os.path.join(BASE_DIR, "statement_file", "qualifier_output")
 
 TOTAL_LIMIT = 50400       # 14 hours
 RULE_B_LIMIT = 5400       # 1.5 hours

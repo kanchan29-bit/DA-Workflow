@@ -1,10 +1,13 @@
 import pandas as pd
 
+import os
+
 # ===============================
 # CONFIG
 # ===============================
-INPUT_CSV = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\merged_timeline.csv"
-OUTPUT_CSV = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\sessions_output.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+INPUT_CSV = os.path.join(SCRIPT_DIR, "output", "merged_timeline.csv")
+OUTPUT_CSV = os.path.join(SCRIPT_DIR, "output", "sessions_output.csv")
 
 SESSION_GAP_SEC = 300   # 5 minutes
 SINGLE_EVENT_PADDING = 10

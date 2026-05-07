@@ -1,13 +1,16 @@
 import pandas as pd
 from datetime import timedelta, datetime
 
+import os
+
 # ===============================
 # CONFIG
 # ===============================
-INPUT_CSV  = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\final_channel_member_sessions.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+INPUT_CSV  = os.path.join(SCRIPT_DIR, "output", "final_channel_member_sessions.csv")
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
                 
-OUTPUT_CSV = rf"C:\Users\kanch\Desktop\statement\Sessions\fp\output\{yesterday}_fp_sessions.csv"
+OUTPUT_CSV = os.path.join(SCRIPT_DIR, "output", f"{yesterday}_fp_sessions.csv")
 
 # ===============================
 # HELPERS

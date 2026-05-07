@@ -8,10 +8,14 @@ from typing import List
 # ============================================================
 # CONFIG
 # ============================================================
+# Get project root directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
+
 yesterday_date = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
-INPUT_DIR = r"C:\Users\kanch\Desktop\statement\Sessions\merging\Final_merged_file"
+INPUT_DIR = os.path.join(BASE_DIR, "sessions", "merging", "Final_merged_file")
 INPUT_PATTERN = "*.csv"  # Get all CSV files, we'll filter by date
-OUTPUT_DIR = r"C:\Users\kanch\Desktop\statement\For Panel Files\For_Panel"
+OUTPUT_DIR = os.path.join(BASE_DIR, "for_panel_files", "for_panel")
 
 # Channel IDs to remove
 CHANNELS_TO_REMOVE = {6, 9, 10, 13, 15, 14}

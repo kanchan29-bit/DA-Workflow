@@ -1,14 +1,23 @@
 import pandas as pd
 from datetime import datetime, timedelta
 
+import os
+
 # ===============================
 # CONFIG
 # ===============================
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-file1_csv = rf"C:\Users\kanch\Desktop\statement\Sessions\merging\sessions_with_rejuvenation\{yesterday}Members_Updatedlogo.csv"   # primary file
-file2_csv = rf"C:\Users\kanch\Desktop\statement\Sessions\merging\sessions_with_rejuvenation\{yesterday}Members_UpdatedFP.csv"   # secondary file (rows removed if hhid exists in file1)
 
-output_csv = rf"C:\Users\kanch\Desktop\statement\Sessions\merging\Final_merged_file\{yesterday}_Sessions.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+
+file1_csv = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation", f"{yesterday}Members_Updatedlogo.csv")
+file2_csv = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation", f"{yesterday}Members_UpdatedFP.csv")
+
+output_csv = os.path.join(BASE_DIR, "sessions", "merging", "Final_merged_file", f"{yesterday}_Sessions.csv")
+
+# Ensure output directory exists
+os.makedirs(os.path.dirname(output_csv), exist_ok=True)
 
 HHID_COL = "hhid"         # change if your column name is different
 

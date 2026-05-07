@@ -1032,7 +1032,8 @@ if __name__ == "__main__":
         'password': 'inditronics123'
     }
     
-    OUTPUT_DIR = r'C:\Users\kanch\Desktop\statement\Sessions\logo\household_viewership_memberwise_output'
+    SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+    OUTPUT_DIR = os.path.join(SCRIPT_DIR, 'household_viewership_memberwise_output')
     
     # Run the complete pipeline
     process_pipeline(start_date, end_date, db_config, OUTPUT_DIR)

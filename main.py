@@ -6,90 +6,91 @@ from datetime import datetime
 # ============================================================
 # CONFIG: DEFINE YOUR PIPELINE ORDER HERE
 # ============================================================
+# Use relative paths from the project root
 PIPELINE = [
     {
         "name": "Logo Sessions",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\logo\01_sessions.py",
+        "script": os.path.join("sessions", "logo", "01_sessions.py"),
         "check_file": None  # Optional: path to expected output
     },
     {
         "name": "FP files download",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\fp\02_downloading_files.py",
+        "script": os.path.join("sessions", "fp", "02_downloading_files.py"),
         "check_file": None  # Optional: path to expected output
     },
     {
         "name": "correcting the data",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\fp\03_all scripts_1.py",
+        "script": os.path.join("sessions", "fp", "03_all_scripts_1.py"),
         "check_file": None
     },
     {
         "name": "mapping the data",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\fp\04_Automatic mapping_2.py",
+        "script": os.path.join("sessions", "fp", "04_automatic_mapping_2.py"),
         "check_file": None
     },
     {
         "name": "merging the member declaration and viewership data for fp",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\fp\05_merging_3.py",
+        "script": os.path.join("sessions", "fp", "05_merging_3.py"),
         "check_file": None
     },
     {
         "name": "household sessions for fp",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\fp\06_sessions_4.py",
+        "script": os.path.join("sessions", "fp", "06_sessions_4.py"),
         "check_file": None
     },
     {
         "name": "member sessions for fp",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\fp\07_member_level sessions_5.py",
+        "script": os.path.join("sessions", "fp", "07_member_level_sessions_5.py"),
         "check_file": None
     },
     {
         "name": "cleaning",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\fp\08_Data cleaning_6.py",
+        "script": os.path.join("sessions", "fp", "08_data_cleaning_6.py"),
         "check_file": None
     },
     {
         "name": "merging sessions without rejuvenation for rejuvenation history file",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\merging\09_merging_1.py",
+        "script": os.path.join("sessions", "merging", "09_merging_1.py"),
         "check_file": None
     },
     {
         "name": "cleaning for history file",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\merging\10_Data Cleaning.py",
+        "script": os.path.join("sessions", "merging", "10_data_cleaning.py"),
         "check_file": None
     },
     {
         "name": "member rejuvenation",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\merging\11_member_rejuvination.py",
+        "script": os.path.join("sessions", "merging", "11_member_rejuvenation.py"),
         "check_file": None
     },
     {
         "name": "now merging the rejuvenated logo and fp files",
-        "script": r"C:\Users\kanch\Desktop\statement\Sessions\merging\12_merging_after_rejuvenation.py",
+        "script": os.path.join("sessions", "merging", "12_merging_after_rejuvenation.py"),
         "check_file": None
     },
     {
         "name": "cleaning for panel file",
-        "script": r"C:\Users\kanch\Desktop\statement\For Panel Files\13_Data CLeaning.py",
+        "script": os.path.join("for_panel_files", "13_data_cleaning.py"),
         "check_file": None
     },
     {
         "name": "3 rules",
-        "script": r"C:\Users\kanch\Desktop\statement\Statement File\14_Qualifier_rules.py",
+        "script": os.path.join("statement_file", "14_qualifier_rules.py"),
         "check_file": None
     },
     {
         "name": "channel clipping",
-        "script": r"C:\Users\kanch\Desktop\statement\Statement File\15_Channel_clippling.py",
+        "script": os.path.join("statement_file", "15_channel_clipping.py"),
         "check_file": None
     },
     {
         "name": "statement file generation",
-        "script": r"C:\Users\kanch\Desktop\statement\Statement File\16_Final_data_cleaning.py",
+        "script": os.path.join("statement_file", "16_final_data_cleaning.py"),
         "check_file": None
     }
 ]
 
-LOG_FILE = r"C:\Users\kanch\Desktop\statement\Pipeline\pipeline_log.txt"
+LOG_FILE = os.path.join("pipeline", "pipeline_log.txt")
 
 # ============================================================
 # FUNCTION: RUN SCRIPT
@@ -98,7 +99,13 @@ def run_step(step):
     print(f"\n▶ Running: {step['name']}")
     start_time = datetime.now()
 
-    result = subprocess.run([sys.executable, step["script"]])
+    # Ensure the script path is absolute or correctly relative to the project root
+    script_path = os.path.abspath(step["script"])
+    
+    if not os.path.exists(script_path):
+        raise Exception(f"❌ Script not found: {script_path}")
+
+    result = subprocess.run([sys.executable, script_path])
 
     end_time = datetime.now()
     duration = end_time - start_time
@@ -106,12 +113,13 @@ def run_step(step):
     log(f"{step['name']} | Start: {start_time} | End: {end_time} | Duration: {duration} | Code: {result.returncode}")
 
     if result.returncode != 0:
-        raise Exception(f"❌ Script failed: {step['script']}")
+        raise Exception(f"❌ Script failed: {script_path}")
 
     # Optional output validation
     if step["check_file"]:
-        if not os.path.exists(step["check_file"]):
-            raise Exception(f"❌ Expected output not found: {step['check_file']}")
+        check_path = os.path.abspath(step["check_file"])
+        if not os.path.exists(check_path):
+            raise Exception(f"❌ Expected output not found: {check_path}")
 
     print(f"✅ Completed: {step['name']}")
 
@@ -119,6 +127,11 @@ def run_step(step):
 # FUNCTION: LOGGING
 # ============================================================
 def log(message):
+    # Ensure the log directory exists
+    log_dir = os.path.dirname(LOG_FILE)
+    if log_dir and not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+        
     with open(LOG_FILE, "a") as f:
         f.write(message + "\n")
 

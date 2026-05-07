@@ -24,11 +24,17 @@ end_date_str = yesterday.strftime("%Y-%m-%d")
 
 print(f"Auto Date Selected (D-1): {start_date_str}")
 
+import os
+
 # -------------------------------
 # HARD CODED FILE PATHS
 # -------------------------------
-device_csv_path = r"C:\Users\kanch\Desktop\statement\Sessions\fp\New folder\filtered.csv"
-output_csv_path = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\mapping.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+device_csv_path = os.path.join(SCRIPT_DIR, "input_data", "filtered.csv")
+output_csv_path = os.path.join(SCRIPT_DIR, "output", "mapping.csv")
+
+# Ensure output directory exists
+os.makedirs(os.path.dirname(output_csv_path), exist_ok=True)
 
 # -------------------------------
 # LOAD DEVICE IDs FROM CSV

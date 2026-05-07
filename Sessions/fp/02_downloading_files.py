@@ -13,8 +13,11 @@ EMAIL_PASS = "hnqj quqc lqmz pgmj" # App Password (NO spaces)
 
 IMAP_SERVER = "imap.gmail.com"
 
-DOWNLOAD_DIR = r"C:\Users\kanch\Desktop\statement\Sessions\fp\downloads"
-EXTRACT_DIR = r"C:\Users\kanch\Desktop\statement\Sessions\fp\New folder"
+# Get the current script's directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+DOWNLOAD_DIR = os.path.join(SCRIPT_DIR, "downloads")
+EXTRACT_DIR = os.path.join(SCRIPT_DIR, "input_data")
 
 SUBJECT_FILTER = "Fingerprint Data"
 

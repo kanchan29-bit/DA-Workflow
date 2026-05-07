@@ -1,13 +1,19 @@
 import pandas as pd
 from datetime import datetime, timedelta
 
+import os
+
 # =========================
 # FILE PATHS
 # =========================
 yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-input_file = rf"C:\Users\kanch\Desktop\statement\Sessions\merging\sessions_without_rejuvenation\{yesterday}_Sessions.csv"
-main_file = r'C:\Users\kanch\Desktop\statement\Sessions\merging\main_reference.xlsx'
-output_file = r'C:\Users\kanch\Desktop\statement\Sessions\merging\main_reference.xlsx'
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+
+input_file = os.path.join(BASE_DIR, "sessions", "merging", "sessions_without_rejuvenation", f"{yesterday}_Sessions.csv")
+main_file = os.path.join(BASE_DIR, "sessions", "merging", "main_reference.xlsx")
+output_file = os.path.join(BASE_DIR, "sessions", "merging", "main_reference.xlsx")
 
 # =========================
 # LOAD FILES

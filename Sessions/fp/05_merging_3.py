@@ -1,11 +1,14 @@
 import pandas as pd
 
+import os
+
 # ===============================
 # CONFIG
 # ===============================
-file1_csv = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\mapping.csv"
-file2_csv = r"C:\Users\kanch\Desktop\statement\Sessions\fp\New folder\filtered.csv"
-output_csv = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output\merged_timeline.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+file1_csv = os.path.join(SCRIPT_DIR, "output", "mapping.csv")
+file2_csv = os.path.join(SCRIPT_DIR, "input_data", "filtered.csv")
+output_csv = os.path.join(SCRIPT_DIR, "output", "merged_timeline.csv")
 
 # ===============================
 # READ FILES

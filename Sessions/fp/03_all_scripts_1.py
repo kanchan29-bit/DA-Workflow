@@ -9,8 +9,10 @@ import psycopg2
 # ==========================================================
 # CONFIGURATION
 # ==========================================================
-INPUT_DIR = r"C:\Users\kanch\Desktop\statement\Sessions\fp\New folder"   # <-- change if needed
-FINAL_OUTPUT_FILE = r"C:\Users\kanch\Desktop\statement\Sessions\fp\New folder\filtered.csv"
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+INPUT_DIR = os.path.join(SCRIPT_DIR, "input_data")
+FINAL_OUTPUT_FILE = os.path.join(INPUT_DIR, "filtered.csv")
 
 DB_CONFIG = {
     "host": "armenia-db-01.c960kiumy09x.ap-south-1.rds.amazonaws.com",

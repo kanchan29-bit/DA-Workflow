@@ -10,12 +10,16 @@ from datetime import datetime, timedelta
 # PATHS
 # ============================================================
 
-LOGO_INPUT_PATH = r"C:\Users\kanch\Desktop\statement\Sessions\logo\household_viewership_memberwise_output"
-FP_INPUT_PATH   = r"C:\Users\kanch\Desktop\statement\Sessions\fp\output"
+# Get project root directory
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
 
-OUTPUT_PATH = r"C:\Users\kanch\Desktop\statement\Sessions\merging\sessions_with_rejuvenation"
+LOGO_INPUT_PATH = os.path.join(BASE_DIR, "sessions", "logo", "household_viewership_memberwise_output")
+FP_INPUT_PATH   = os.path.join(BASE_DIR, "sessions", "fp", "output")
 
-REF_FILE = r"C:\Users\kanch\Desktop\statement\Sessions\merging\main_reference.xlsx"
+OUTPUT_PATH = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation")
+
+REF_FILE = os.path.join(BASE_DIR, "sessions", "merging", "main_reference.xlsx")
 REF_SHEET = "Sheet1"
 
 # ============================================================
