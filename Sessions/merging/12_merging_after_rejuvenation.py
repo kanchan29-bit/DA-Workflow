@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 # ===============================
 # CONFIG
 # ===============================
-yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
+yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 file1_csv = rf"C:\Users\kanch\Desktop\statement\Sessions\merging\sessions_with_rejuvenation\{yesterday}Members_Updatedlogo.csv"   # primary file
 file2_csv = rf"C:\Users\kanch\Desktop\statement\Sessions\merging\sessions_with_rejuvenation\{yesterday}Members_UpdatedFP.csv"   # secondary file (rows removed if hhid exists in file1)
 
