@@ -87,6 +87,11 @@ PIPELINE = [
         "name": "statement file generation",
         "script": os.path.join("statement_file", "16_final_data_cleaning.py"),
         "check_file": None
+    },
+    {
+        "name": "upload outputs to S3",
+        "script": os.path.join("pipeline", "17_upload_to_s3.py"),
+        "check_file": None
     }
 ]
 

@@ -92,7 +92,7 @@ db_df = pd.read_sql(query, conn)
 
 conn.close()
 
-# IMPORTANT: deduplicate HHID → region mapping
+# IMPORTANT: deduplicate HHID -> region mapping
 master_df = db_df[['hhid','region']].drop_duplicates()
 
 # rename to match your pipeline
@@ -209,7 +209,7 @@ cap_df['Rule_Label'] = np.where(
     'Excluded channel – No cap',
     np.where(
         cap_df['uniqueviewercount'] < 5,
-        'Low sample (<5) → Zero',
+        'Low sample (<5) -> Zero',
         'P95 + Absolute cap'
     )
 )

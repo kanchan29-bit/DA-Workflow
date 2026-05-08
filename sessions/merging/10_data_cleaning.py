@@ -46,7 +46,7 @@ df_input['Day'] = df_input['Day_Wise'].apply(
     lambda x: 'Weekend' if x in ['Saturday', 'Sunday'] else 'Weekday'
 )
 
-# AFTER all operations → convert to clean string
+# AFTER all operations -> convert to clean string
 df_input['date'] = df_input['date'].dt.strftime('%Y-%m-%d')
 
 # =========================

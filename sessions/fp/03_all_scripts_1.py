@@ -48,12 +48,12 @@ yesterday = today - timedelta(days=1)
 
 expected_files = []
 
-# D-1 → hours 02 to 23
+# D-1 -> hours 02 to 23
 for hour in range(2, 24):
     fname = f"{yesterday}_{hour:02d}_matched.csv"
     expected_files.append(os.path.join(INPUT_DIR, fname))
 
-# D → hours 00 and 01
+# D -> hours 00 and 01
 for hour in range(0, 2):
     fname = f"{today}_{hour:02d}_matched.csv"
     expected_files.append(os.path.join(INPUT_DIR, fname))
@@ -113,7 +113,7 @@ combined_df["device_id"] = (
 print(" device_id created")
 
 # ==========================================================
-# STEP 4: FETCH meter_id → hhid MAPPING
+# STEP 4: FETCH meter_id -> hhid MAPPING
 # ==========================================================
 print("Connecting to database...")
 
@@ -139,7 +139,7 @@ conn.close()
 print(f"Fetched {len(mapping_df)} meter-household mappings")
 
 # ==========================================================
-# STEP 5: MAP device_id → hhid
+# STEP 5: MAP device_id -> hhid
 # ==========================================================
 final_df = combined_df.merge(
     mapping_df,

@@ -6,3 +6,4 @@ PyYAML
 SQLAlchemy
 pytz
 openpyxl
+boto3

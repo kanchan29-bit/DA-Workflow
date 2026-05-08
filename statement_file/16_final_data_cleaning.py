@@ -41,13 +41,13 @@ CHANNEL_MAP = {
 }
 
 # ===============================
-# FUNCTION: TIME → SECONDS
+# FUNCTION: TIME -> SECONDS
 # ===============================
 def convert_time_to_seconds(time_str):
     h, m, s = map(int, time_str.split(":"))
     seconds = h * 3600 + m * 60 + s
 
-    # If hour is 00 or 01 → next day continuation
+    # If hour is 00 or 01 -> next day continuation
     if h in [0, 1]:
         seconds += 86400
 
@@ -59,7 +59,7 @@ def convert_time_to_seconds(time_str):
 df = pd.read_csv(INPUT_FILE)
 
 # ===============================
-# START TIME → SECONDS
+# START TIME -> SECONDS
 # ===============================
 if "start_time_secs" in df.columns:
     df = df.drop(columns=["start_time_secs"])

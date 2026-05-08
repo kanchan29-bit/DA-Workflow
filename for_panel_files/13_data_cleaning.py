@@ -23,7 +23,7 @@ CHANNELS_TO_REMOVE = {6, 9, 10, 13, 15, 14}
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ============================================================
-# Helper: convert HH:MM:SS(.ms) → reporting-day seconds
+# Helper: convert HH:MM:SS(.ms) -> reporting-day seconds
 # ============================================================
 def time_to_seconds(t):
     try:

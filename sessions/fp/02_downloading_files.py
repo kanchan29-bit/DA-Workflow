@@ -1,122 +1,112 @@
+"""
+02_downloading_files.py - Download FP matched/unmatched CSVs from S3.
 
-import imaplib
-import email
+Replaces the old email-based download with direct S3 access.
+Downloads files for the reporting window: D-1 02:00 to D 01:59.
+"""
+
 import os
-import zipfile
-from datetime import datetime
+import sys
+from datetime import datetime, timedelta
 
 # ============================================================
 # CONFIG
 # ============================================================
-from dotenv import load_dotenv
-
-# Get the current script's directory
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
 
-# Load .env file
-load_dotenv(os.path.join(BASE_DIR, ".env"))
+# Add project root to path so we can import s3_utils
+sys.path.insert(0, BASE_DIR)
+from s3_utils import download_file, S3_INPUT_BUCKET, S3_PREFIX_BASE
 
-# ============================================================
-# CONFIG
-# ============================================================
-EMAIL_USER = os.getenv("EMAIL_USER")
-EMAIL_PASS = os.getenv("EMAIL_PASS")
-IMAP_SERVER = os.getenv("IMAP_SERVER")
-
-# Get the current script's directory
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-
-DOWNLOAD_DIR = os.path.join(SCRIPT_DIR, "downloads")
 EXTRACT_DIR = os.path.join(SCRIPT_DIR, "input_data")
-
-SUBJECT_FILTER = "Fingerprint Data"
-
-# ============================================================
-# SETUP
-# ============================================================
-os.makedirs(DOWNLOAD_DIR, exist_ok=True)
 os.makedirs(EXTRACT_DIR, exist_ok=True)
 
 # ============================================================
-# CONNECT TO EMAIL
+# BUILD EXPECTED FILE LIST (D-1 + D LOGIC)
 # ============================================================
-mail = imaplib.IMAP4_SSL(IMAP_SERVER)
-mail.login(EMAIL_USER, EMAIL_PASS)
-mail.select("inbox")
+today = datetime.now().date()
+yesterday = today - timedelta(days=1)
 
-# ============================================================
-# FETCH ONLY TODAY'S EMAILS WITH SUBJECT
-# ============================================================
-today_imap = datetime.now().strftime("%d-%b-%Y")  # e.g. "17-Apr-2026"
-today_date = datetime.now().date()
+# Reporting window: yesterday 02:00 to today 01:59
+download_plan = []
 
-status, messages = mail.search(None, f'(SINCE "{today_imap}" SUBJECT "{SUBJECT_FILTER}")')
-email_ids = messages[0].split()
+# D-1 -> hours 02 to 23
+for hour in range(2, 24):
+    date_str = yesterday.strftime("%Y-%m-%d")
+    hour_str = f"{hour:02d}"
+    download_plan.append((date_str, hour_str))
 
-print(f"Total matching emails today: {len(email_ids)}")
+# D -> hours 00 and 01
+for hour in range(0, 2):
+    date_str = today.strftime("%Y-%m-%d")
+    hour_str = f"{hour:02d}"
+    download_plan.append((date_str, hour_str))
 
-# ============================================================
-# FIND LATEST EMAIL FROM TODAY
-# ============================================================
-latest_email = None
-latest_datetime = None
-
-for e_id in email_ids:
-    status, msg_data = mail.fetch(e_id, "(RFC822)")
-
-    for response_part in msg_data:
-        if isinstance(response_part, tuple):
-            msg = email.message_from_bytes(response_part[1])
-
-            # Parse email date
-            email_datetime = email.utils.parsedate_to_datetime(msg["Date"])
-            email_date = email_datetime.date()
-
-            # Safety check: ensure it's truly today (SINCE can include yesterday near midnight)
-            if email_date != today_date:
-                continue
-
-            # Keep latest
-            if (latest_datetime is None) or (email_datetime > latest_datetime):
-                latest_datetime = email_datetime
-                latest_email = msg
+print(f"Downloading FP files from S3 bucket: {S3_INPUT_BUCKET}")
+print(f"Prefix base: {S3_PREFIX_BASE}")
+print(f"Expected {len(download_plan)} matched + {len(download_plan)} unmatched files")
 
 # ============================================================
-# PROCESS LATEST EMAIL
+# DOWNLOAD FILES FROM S3
 # ============================================================
-if latest_email is None:
-    print(" No email found for today with given subject.")
-else:
-    print(f" Processing latest email from: {latest_datetime}")
+matched_success = 0
+unmatched_success = 0
+matched_failed = []
+unmatched_failed = []
 
-    for part in latest_email.walk():
-        if part.get_content_maintype() == "multipart":
-            continue
-        
-        if part.get("Content-Disposition") is None:
-            continue
+for date_str, hour_str in download_plan:
+    # S3 key pattern from the JS reference:
+    # {PREFIX_BASE}/{dateStr}/{hourStr}/{dateStr}_{hourStr}_matched.csv
+    base_key = f"{S3_PREFIX_BASE}/{date_str}/{hour_str}/{date_str}_{hour_str}" if S3_PREFIX_BASE else f"{date_str}/{hour_str}/{date_str}_{hour_str}"
 
-        filename = part.get_filename()
+    # --- Download matched ---
+    matched_key = f"{base_key}_matched.csv"
+    matched_local = os.path.join(EXTRACT_DIR, f"{date_str}_{hour_str}_matched.csv")
 
-        if filename and filename.endswith(".zip"):
-            filepath = os.path.join(DOWNLOAD_DIR, filename)
+    try:
+        if download_file(S3_INPUT_BUCKET, matched_key, matched_local):
+            matched_success += 1
+        else:
+            matched_failed.append(f"{date_str}_{hour_str}_matched.csv")
+            print(f"  Not found: {matched_key}")
+    except Exception as e:
+        matched_failed.append(f"{date_str}_{hour_str}_matched.csv")
+        print(f"  Error downloading {matched_key}: {e}")
 
-            # Save ZIP
-            with open(filepath, "wb") as f:
-                f.write(part.get_payload(decode=True))
+    # --- Download unmatched ---
+    unmatched_key = f"{base_key}_unmatched.csv"
+    unmatched_local = os.path.join(EXTRACT_DIR, f"{date_str}_{hour_str}_unmatched.csv")
 
-            print(f"📥 Downloaded: {filename}")
-
-            # Extract ZIP
-            with zipfile.ZipFile(filepath, 'r') as zip_ref:
-                zip_ref.extractall(EXTRACT_DIR)
-
-            print(f" Extracted: {filename}")
+    try:
+        if download_file(S3_INPUT_BUCKET, unmatched_key, unmatched_local):
+            unmatched_success += 1
+        else:
+            unmatched_failed.append(f"{date_str}_{hour_str}_unmatched.csv")
+            print(f"  Not found: {unmatched_key}")
+    except Exception as e:
+        unmatched_failed.append(f"{date_str}_{hour_str}_unmatched.csv")
+        print(f"  Error downloading {unmatched_key}: {e}")
 
 # ============================================================
-# CLEANUP
+# SUMMARY
 # ============================================================
-mail.logout()
+print(f"\nDownload Summary:")
+print(f"  Matched files downloaded:   {matched_success}/{len(download_plan)}")
+print(f"  Unmatched files downloaded:  {unmatched_success}/{len(download_plan)}")
 
-print(" Done.")
+if matched_failed:
+    print(f"\n  Missing matched files ({len(matched_failed)}):")
+    for f in matched_failed:
+        print(f"    - {f}")
+
+if unmatched_failed:
+    print(f"\n  Missing unmatched files ({len(unmatched_failed)}):")
+    for f in unmatched_failed:
+        print(f"    - {f}")
+
+# Fail if no matched files were downloaded (matched files are critical)
+if matched_success == 0:
+    raise RuntimeError("No matched files could be downloaded from S3. Check credentials and bucket/prefix configuration.")
+
+print("\nS3 download complete.")
