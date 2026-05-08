@@ -12,10 +12,16 @@ from sqlalchemy import create_engine
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
-yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
+yesterday_obj = datetime.now() - timedelta(days=1)
+yesterday_dmy = yesterday_obj.strftime("%d-%m-%Y")
+yesterday_ymd = yesterday_obj.strftime("%Y-%m-%d")
 
-# Use raw strings for Windows paths
-INPUT_PATTERN = os.path.join(BASE_DIR, "for_panel_files", "for_panel", f"{yesterday}_cleaned.csv")
+# Search for both possible filename patterns
+pattern_dmy = os.path.join(BASE_DIR, "for_panel_files", "for_panel", f"{yesterday_dmy}_cleaned.csv")
+pattern_ymd = os.path.join(BASE_DIR, "for_panel_files", "for_panel", f"{yesterday_ymd}_cleaned.csv")
+
+# We'll use glob to find whichever one exists
+INPUT_PATTERN = [pattern_dmy, pattern_ymd]
 OUTPUT_DIR = os.path.join(BASE_DIR, "statement_file", "qualifier_output")
 
 TOTAL_LIMIT = 50400       # 14 hours
@@ -153,9 +159,13 @@ def parse_flexible_datetime(date_str, time_str):
 # ============================================================
 # LOAD FILES
 # ============================================================
-files = glob.glob(INPUT_PATTERN)
+# Try each pattern
+files = []
+for p in INPUT_PATTERN:
+    files.extend(glob.glob(p))
+
 if not files:
-    raise FileNotFoundError(f"No CSV files found matching pattern: {INPUT_PATTERN}")
+    raise FileNotFoundError(f"No CSV files found matching patterns: {INPUT_PATTERN}")
 
 # ============================================================
 # PROCESS FILES
