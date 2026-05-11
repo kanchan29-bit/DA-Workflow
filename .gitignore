@@ -3,3 +3,4 @@ __pycache__/
 *.csv
 *.xlsx
 *.zip
+pipeline_log.txt

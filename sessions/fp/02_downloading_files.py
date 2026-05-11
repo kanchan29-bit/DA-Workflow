@@ -1,8 +1,9 @@
 """
-02_downloading_files.py - Download FP matched/unmatched CSVs from S3.
+02_downloading_files.py - Download FP matched CSVs from S3.
 
 Replaces the old email-based download with direct S3 access.
 Downloads files for the reporting window: D-1 02:00 to D 01:59.
+Only downloads matched files (unmatched are not used by the pipeline).
 """
 
 import os
@@ -45,22 +46,18 @@ for hour in range(0, 2):
 
 print(f"Downloading FP files from S3 bucket: {S3_INPUT_BUCKET}")
 print(f"Prefix base: {S3_PREFIX_BASE}")
-print(f"Expected {len(download_plan)} matched + {len(download_plan)} unmatched files")
+print(f"Expected {len(download_plan)} matched files")
 
 # ============================================================
-# DOWNLOAD FILES FROM S3
+# DOWNLOAD MATCHED FILES FROM S3
 # ============================================================
 matched_success = 0
-unmatched_success = 0
 matched_failed = []
-unmatched_failed = []
 
 for date_str, hour_str in download_plan:
-    # S3 key pattern from the JS reference:
-    # {PREFIX_BASE}/{dateStr}/{hourStr}/{dateStr}_{hourStr}_matched.csv
+    # S3 key pattern: {PREFIX_BASE}/{dateStr}/{hourStr}/{dateStr}_{hourStr}_matched.csv
     base_key = f"{S3_PREFIX_BASE}/{date_str}/{hour_str}/{date_str}_{hour_str}" if S3_PREFIX_BASE else f"{date_str}/{hour_str}/{date_str}_{hour_str}"
 
-    # --- Download matched ---
     matched_key = f"{base_key}_matched.csv"
     matched_local = os.path.join(EXTRACT_DIR, f"{date_str}_{hour_str}_matched.csv")
 
@@ -74,35 +71,15 @@ for date_str, hour_str in download_plan:
         matched_failed.append(f"{date_str}_{hour_str}_matched.csv")
         print(f"  Error downloading {matched_key}: {e}")
 
-    # --- Download unmatched ---
-    unmatched_key = f"{base_key}_unmatched.csv"
-    unmatched_local = os.path.join(EXTRACT_DIR, f"{date_str}_{hour_str}_unmatched.csv")
-
-    try:
-        if download_file(S3_INPUT_BUCKET, unmatched_key, unmatched_local):
-            unmatched_success += 1
-        else:
-            unmatched_failed.append(f"{date_str}_{hour_str}_unmatched.csv")
-            print(f"  Not found: {unmatched_key}")
-    except Exception as e:
-        unmatched_failed.append(f"{date_str}_{hour_str}_unmatched.csv")
-        print(f"  Error downloading {unmatched_key}: {e}")
-
 # ============================================================
 # SUMMARY
 # ============================================================
 print(f"\nDownload Summary:")
-print(f"  Matched files downloaded:   {matched_success}/{len(download_plan)}")
-print(f"  Unmatched files downloaded:  {unmatched_success}/{len(download_plan)}")
+print(f"  Matched files downloaded: {matched_success}/{len(download_plan)}")
 
 if matched_failed:
     print(f"\n  Missing matched files ({len(matched_failed)}):")
     for f in matched_failed:
-        print(f"    - {f}")
-
-if unmatched_failed:
-    print(f"\n  Missing unmatched files ({len(unmatched_failed)}):")
-    for f in unmatched_failed:
         print(f"    - {f}")
 
 # Fail if no matched files were downloaded (matched files are critical)

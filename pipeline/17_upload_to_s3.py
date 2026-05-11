@@ -1,14 +1,17 @@
 """
-17_upload_to_s3.py - Upload all pipeline outputs to S3.
+17_upload_to_s3.py - Upload all pipeline outputs to S3, then clean up local files.
 
 Uploads to: s3://indi-analytics-output/DA-Output/{DD-MM-YYYY}/{category}/{filename}
 
 Output files are uploaded WITHOUT dates in the filename.
 The date is encoded in the S3 folder path instead.
+
+After successful upload, local output files and downloaded FP input files are deleted.
 """
 
 import os
 import sys
+import glob
 from datetime import datetime, timedelta
 
 # ============================================================
@@ -123,6 +126,7 @@ UPLOADS = [
 uploaded = 0
 skipped = 0
 failed = 0
+uploaded_paths = []  # Track successfully uploaded files for deletion
 
 for item in UPLOADS:
     local_path = os.path.join(BASE_DIR, item["local"])
@@ -140,12 +144,13 @@ for item in UPLOADS:
             date_str=s3_date,
         )
         uploaded += 1
+        uploaded_paths.append(local_path)
     except Exception as e:
         print(f"  FAILED: {item['local']} -> {e}")
         failed += 1
 
 # ============================================================
-# SUMMARY
+# UPLOAD SUMMARY
 # ============================================================
 print(f"\nUpload Summary:")
 print(f"  Uploaded: {uploaded}")
@@ -154,6 +159,68 @@ print(f"  Failed:   {failed}")
 print(f"  Total:    {len(UPLOADS)}")
 
 if failed > 0:
-    raise RuntimeError(f"{failed} file(s) failed to upload to S3.")
+    raise RuntimeError(f"{failed} file(s) failed to upload to S3. Skipping cleanup.")
 
-print("\nS3 upload complete.")
+# ============================================================
+# CLEANUP: DELETE UPLOADED OUTPUT FILES
+# ============================================================
+print("\nCleaning up uploaded output files...")
+deleted_outputs = 0
+
+for path in uploaded_paths:
+    try:
+        os.remove(path)
+        deleted_outputs += 1
+    except Exception as e:
+        print(f"  Warning: Could not delete {path}: {e}")
+
+print(f"  Deleted {deleted_outputs} output file(s)")
+
+# ============================================================
+# CLEANUP: DELETE DOWNLOADED FP INPUT FILES
+# ============================================================
+print("\nCleaning up downloaded FP input files...")
+fp_input_dir = os.path.join(BASE_DIR, "sessions", "fp", "input_data")
+deleted_inputs = 0
+
+if os.path.exists(fp_input_dir):
+    for csv_file in glob.glob(os.path.join(fp_input_dir, "*.csv")):
+        try:
+            os.remove(csv_file)
+            deleted_inputs += 1
+        except Exception as e:
+            print(f"  Warning: Could not delete {csv_file}: {e}")
+
+print(f"  Deleted {deleted_inputs} FP input file(s)")
+
+# ============================================================
+# CLEANUP: DELETE FP INTERMEDIATE FILES
+# ============================================================
+print("\nCleaning up FP intermediate files...")
+fp_output_dir = os.path.join(BASE_DIR, "sessions", "fp", "output")
+fp_download_dir = os.path.join(BASE_DIR, "sessions", "fp", "downloads")
+deleted_intermediate = 0
+
+for cleanup_dir in [fp_output_dir, fp_download_dir]:
+    if os.path.exists(cleanup_dir):
+        for f in glob.glob(os.path.join(cleanup_dir, "*.csv")):
+            try:
+                os.remove(f)
+                deleted_intermediate += 1
+            except Exception as e:
+                print(f"  Warning: Could not delete {f}: {e}")
+
+print(f"  Deleted {deleted_intermediate} intermediate file(s)")
+
+# ============================================================
+# CLEANUP: DELETE REJUVENATION AUDIT FILES
+# ============================================================
+rejuv_dir = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation")
+if os.path.exists(rejuv_dir):
+    for txt_file in glob.glob(os.path.join(rejuv_dir, "*.txt")):
+        try:
+            os.remove(txt_file)
+        except Exception:
+            pass
+
+print(f"\nAll cleanup complete. S3 upload and cleanup finished successfully.")

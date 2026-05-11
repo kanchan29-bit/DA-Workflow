@@ -7,3 +7,4 @@ SQLAlchemy
 pytz
 openpyxl
 boto3
+Flask

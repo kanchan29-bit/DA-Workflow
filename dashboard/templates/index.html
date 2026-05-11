@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DA-Workflow Dashboard</title>
+    
+    <!-- Google Fonts: Instrument Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
+    
+    <!-- Google Material Symbols Outlined -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="material-symbols-outlined logo-icon">account_tree</span>
+                <h1>DA-Workflow</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-target="workflows-view">
+                    <span class="material-symbols-outlined">play_circle</span>
+                    Workflows
+                </button>
+                <button class="nav-item" data-target="artifacts-view">
+                    <span class="material-symbols-outlined">inventory_2</span>
+                    Artifacts
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Workflows View -->
+            <div id="workflows-view" class="view-section active">
+                <header class="view-header">
+                    <h2>Workflow Executions</h2>
+                    <button id="run-workflow-btn" class="btn btn-primary">
+                        <span class="material-symbols-outlined">play_arrow</span>
+                        Run Workflow
+                    </button>
+                </header>
+
+                <div id="workflows-list" class="workflows-list">
+                    <!-- Workflow cards injected via JS -->
+                    <div class="loading-state">
+                        <span class="material-symbols-outlined spinning">sync</span>
+                        <p>Loading workflows...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Single Workflow Detail View (Hidden by default) -->
+            <div id="workflow-detail-view" class="view-section">
+                <header class="view-header">
+                    <div class="breadcrumb">
+                        <button id="back-to-workflows" class="btn btn-icon">
+                            <span class="material-symbols-outlined">arrow_back</span>
+                        </button>
+                        <h2 id="detail-workflow-title">Workflow Run</h2>
+                        <span id="detail-workflow-status" class="status-badge"></span>
+                    </div>
+                    <div class="detail-actions">
+                        <button id="retry-workflow-btn" class="btn btn-secondary hidden">
+                            <span class="material-symbols-outlined">replay</span>
+                            Retry Failed Steps
+                        </button>
+                    </div>
+                </header>
+
+                <div class="workflow-detail-container">
+                    <div class="workflow-steps">
+                        <h3>Steps</h3>
+                        <div id="steps-timeline" class="steps-timeline">
+                            <!-- Steps injected via JS -->
+                        </div>
+                    </div>
+                    
+                    <div class="workflow-logs">
+                        <div class="logs-header">
+                            <span class="material-symbols-outlined">terminal</span>
+                            <h3>Logs</h3>
+                            <span id="current-step-label" class="step-label">Overall</span>
+                        </div>
+                        <pre id="logs-container" class="logs-container">Select a step to view logs...</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Artifacts View (Hidden by default) -->
+            <div id="artifacts-view" class="view-section">
+                <header class="view-header">
+                    <h2>Execution History & Artifacts</h2>
+                </header>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Trigger</th>
+                                <th>Duration</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="artifacts-tbody">
+                            <!-- Artifact rows injected via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Error Toast Notification -->
+    <div id="toast" class="toast">
+        <span class="material-symbols-outlined">error</span>
+        <span id="toast-message">Error message</span>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
