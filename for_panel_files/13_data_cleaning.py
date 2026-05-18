@@ -49,7 +49,6 @@ def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
     Shift values from s3_date column to date column, and from chname column to channel column.
     This function is called BEFORE any other processing.
     """
-    print("    Shifting column values (s3_date - date, chname - channel)...")
     
     # Shift s3_date to date column
     if 's3_date' in df.columns:
@@ -120,18 +119,23 @@ CHANNEL_MAP_NORM = {k.strip().lower(): v for k, v in CHANNEL_MAP.items()}
 # ============================================================
 # Utilities - FIXED for DD-MM-YYYY format
 # ============================================================
-# Updated regex to match DD-MM-YYYY format
-DATE_REGEX = re.compile(r"(\d{2}-\d{2}-\d{4})")  # Matches DD-MM-YYYY
+# Updated regex to match DD-MM-YYYY or YYYY-MM-DD format
+DATE_REGEX = re.compile(r"(\d{2}-\d{2}-\d{4})|(\d{4}-\d{2}-\d{2})")
 
 def extract_date_from_filename(filename: str):
     match = DATE_REGEX.search(filename)
     if not match:
         return None
-    try:
-        # Parse DD-MM-YYYY format
-        return datetime.strptime(match.group(1), "%d-%m-%Y").date()
-    except ValueError:
-        return None
+    
+    date_str = match.group(0)
+    
+    # Try parsing both formats
+    for fmt in ["%d-%m-%Y", "%Y-%m-%d"]:
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            continue
+    return None
 
 def get_files_in_date_range(start_date, end_date) -> List[str]:
     files = glob.glob(os.path.join(INPUT_DIR, INPUT_PATTERN))
@@ -231,7 +235,11 @@ def process_file(file_path: str):
     df.to_csv(output_file, index=False)
 
     print(
+<<<<<<< HEAD
         f" Rows: {original_rows} - {cleaned_rows} | "
+=======
+        f" Rows: {original_rows} -> {cleaned_rows} | "
+>>>>>>> 44146fd5e56f8a9ad896515110a4d809109ffc15
         f" Removed: {removed_count} | "
         f"Saved: {output_file}"
     )
@@ -248,7 +256,7 @@ def main():
     yesterday = (datetime.now() - timedelta(days=1)).date()
     yesterday_str = yesterday.strftime("%d-%m-%Y")  # For matching filenames
 
-    print(f"📆 Target date: {yesterday_str}")
+    print(f"Target date: {yesterday_str}")
 
     # --------------------------------------------------------
     # Get all CSV files and filter for yesterday's date

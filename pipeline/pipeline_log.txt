@@ -1,0 +1,67 @@
+Logo Sessions | Start: 2026-05-08 10:56:26.904506 | End: 2026-05-08 10:56:32.456536 | Duration: 0:00:05.552030 | Code: 1
+ERROR: Script failed: C:\Users\ankur\Dev\others\DS\DA-Workflow\sessions\logo\01_sessions.py
+Logo Sessions | Start: 2026-05-08 10:57:24.681327 | End: 2026-05-08 11:00:16.702401 | Duration: 0:02:52.021074 | Code: 0
+FP files download | Start: 2026-05-08 11:00:16.703369 | End: 2026-05-08 11:00:35.719851 | Duration: 0:00:19.016482 | Code: 0
+correcting the data | Start: 2026-05-08 11:00:35.721487 | End: 2026-05-08 11:00:40.081664 | Duration: 0:00:04.360177 | Code: 0
+mapping the data | Start: 2026-05-08 11:00:40.082806 | End: 2026-05-08 11:01:03.840579 | Duration: 0:00:23.757773 | Code: 0
+merging the member declaration and viewership data for fp | Start: 2026-05-08 11:01:03.861195 | End: 2026-05-08 11:01:13.866252 | Duration: 0:00:10.005057 | Code: 0
+household sessions for fp | Start: 2026-05-08 11:01:13.867353 | End: 2026-05-08 11:01:54.853410 | Duration: 0:00:40.986057 | Code: 0
+member sessions for fp | Start: 2026-05-08 11:01:54.854666 | End: 2026-05-08 11:02:35.699836 | Duration: 0:00:40.845170 | Code: 0
+cleaning | Start: 2026-05-08 11:02:35.700571 | End: 2026-05-08 11:02:37.180792 | Duration: 0:00:01.480221 | Code: 0
+merging sessions without rejuvenation for rejuvenation history file | Start: 2026-05-08 11:02:37.182045 | End: 2026-05-08 11:02:38.319317 | Duration: 0:00:01.137272 | Code: 0
+cleaning for history file | Start: 2026-05-08 11:02:38.320529 | End: 2026-05-08 11:02:39.510983 | Duration: 0:00:01.190454 | Code: 1
+ERROR: Script failed: C:\Users\ankur\Dev\others\DS\DA-Workflow\sessions\merging\10_data_cleaning.py
+Logo Sessions | Start: 2026-05-08 11:14:28.771588 | End: 2026-05-08 11:20:51.641796 | Duration: 0:06:22.870208 | Code: 0
+FP files download | Start: 2026-05-08 11:20:51.644443 | End: 2026-05-08 11:21:11.371907 | Duration: 0:00:19.727464 | Code: 0
+correcting the data | Start: 2026-05-08 11:21:11.373613 | End: 2026-05-08 11:21:16.069993 | Duration: 0:00:04.696380 | Code: 0
+mapping the data | Start: 2026-05-08 11:21:16.071274 | End: 2026-05-08 11:21:47.911243 | Duration: 0:00:31.839969 | Code: 0
+merging the member declaration and viewership data for fp | Start: 2026-05-08 11:21:47.941159 | End: 2026-05-08 11:22:07.554175 | Duration: 0:00:19.613016 | Code: 0
+household sessions for fp | Start: 2026-05-08 11:22:07.556762 | End: 2026-05-08 11:24:16.724889 | Duration: 0:02:09.168127 | Code: 0
+member sessions for fp | Start: 2026-05-08 11:24:16.728474 | End: 2026-05-08 11:26:03.283515 | Duration: 0:01:46.555041 | Code: 0
+cleaning | Start: 2026-05-08 11:26:03.284810 | End: 2026-05-08 11:26:05.370973 | Duration: 0:00:02.086163 | Code: 0
+merging sessions without rejuvenation for rejuvenation history file | Start: 2026-05-08 11:26:05.373533 | End: 2026-05-08 11:26:06.841354 | Duration: 0:00:01.467821 | Code: 0
+cleaning for history file | Start: 2026-05-08 11:26:06.843065 | End: 2026-05-08 11:30:18.779772 | Duration: 0:04:11.936707 | Code: 1
+ERROR: Script failed: C:\Users\ankur\Dev\others\DS\DA-Workflow\sessions\merging\10_data_cleaning.py
+Logo Sessions | Start: 2026-05-08 12:09:08.433500 | End: 2026-05-08 12:10:49.130405 | Duration: 0:01:40.696905 | Code: 0
+FP files download | Start: 2026-05-08 12:10:49.131073 | End: 2026-05-08 12:11:10.548538 | Duration: 0:00:21.417465 | Code: 0
+correcting the data | Start: 2026-05-08 12:11:10.549227 | End: 2026-05-08 12:11:12.874355 | Duration: 0:00:02.325128 | Code: 0
+mapping the data | Start: 2026-05-08 12:11:12.874898 | End: 2026-05-08 12:11:25.333387 | Duration: 0:00:12.458489 | Code: 0
+merging the member declaration and viewership data for fp | Start: 2026-05-08 12:11:25.333929 | End: 2026-05-08 12:11:30.599666 | Duration: 0:00:05.265737 | Code: 0
+household sessions for fp | Start: 2026-05-08 12:11:30.600198 | End: 2026-05-08 12:11:53.531239 | Duration: 0:00:22.931041 | Code: 0
+member sessions for fp | Start: 2026-05-08 12:11:53.531989 | End: 2026-05-08 12:12:21.468825 | Duration: 0:00:27.936836 | Code: 0
+cleaning | Start: 2026-05-08 12:12:21.469489 | End: 2026-05-08 12:12:22.380501 | Duration: 0:00:00.911012 | Code: 0
+merging sessions without rejuvenation for rejuvenation history file | Start: 2026-05-08 12:12:22.381199 | End: 2026-05-08 12:12:23.147085 | Duration: 0:00:00.765886 | Code: 0
+cleaning for history file | Start: 2026-05-08 12:12:23.147830 | End: 2026-05-08 12:12:27.793639 | Duration: 0:00:04.645809 | Code: 0
+member rejuvenation | Start: 2026-05-08 12:12:27.794346 | End: 2026-05-08 12:12:30.141143 | Duration: 0:00:02.346797 | Code: 1
+ERROR: Script failed: C:\Users\ankur\Dev\others\DS\DA-Workflow\sessions\merging\11_member_rejuvenation.py
+Logo Sessions | Start: 2026-05-08 12:14:14.321593 | End: 2026-05-08 12:15:48.216273 | Duration: 0:01:33.894680 | Code: 0
+FP files download | Start: 2026-05-08 12:15:48.217057 | End: 2026-05-08 12:16:06.485511 | Duration: 0:00:18.268454 | Code: 0
+correcting the data | Start: 2026-05-08 12:16:06.486271 | End: 2026-05-08 12:16:08.701308 | Duration: 0:00:02.215037 | Code: 0
+mapping the data | Start: 2026-05-08 12:16:08.701905 | End: 2026-05-08 12:16:21.707564 | Duration: 0:00:13.005659 | Code: 0
+merging the member declaration and viewership data for fp | Start: 2026-05-08 12:16:21.708092 | End: 2026-05-08 12:16:26.813624 | Duration: 0:00:05.105532 | Code: 0
+household sessions for fp | Start: 2026-05-08 12:16:26.814362 | End: 2026-05-08 12:16:53.113391 | Duration: 0:00:26.299029 | Code: 0
+member sessions for fp | Start: 2026-05-08 12:16:53.114029 | End: 2026-05-08 12:17:21.830805 | Duration: 0:00:28.716776 | Code: 0
+cleaning | Start: 2026-05-08 12:17:21.831436 | End: 2026-05-08 12:17:22.714465 | Duration: 0:00:00.883029 | Code: 0
+merging sessions without rejuvenation for rejuvenation history file | Start: 2026-05-08 12:17:22.715351 | End: 2026-05-08 12:17:23.446959 | Duration: 0:00:00.731608 | Code: 0
+cleaning for history file | Start: 2026-05-08 12:17:23.447597 | End: 2026-05-08 12:17:33.151096 | Duration: 0:00:09.703499 | Code: 0
+member rejuvenation | Start: 2026-05-08 12:17:33.151792 | End: 2026-05-08 12:17:49.019442 | Duration: 0:00:15.867650 | Code: 0
+now merging the rejuvenated logo and fp files | Start: 2026-05-08 12:17:49.020092 | End: 2026-05-08 12:17:49.788977 | Duration: 0:00:00.768885 | Code: 0
+cleaning for panel file | Start: 2026-05-08 12:17:49.789616 | End: 2026-05-08 12:17:50.460297 | Duration: 0:00:00.670681 | Code: 0
+3 rules | Start: 2026-05-08 12:17:50.461054 | End: 2026-05-08 12:17:52.049896 | Duration: 0:00:01.588842 | Code: 1
+ERROR: Script failed: C:\Users\ankur\Dev\others\DS\DA-Workflow\statement_file\14_qualifier_rules.py
+Logo Sessions | Start: 2026-05-08 12:21:53.296515 | End: 2026-05-08 12:23:22.513209 | Duration: 0:01:29.216694 | Code: 0
+FP files download | Start: 2026-05-08 12:23:22.513951 | End: 2026-05-08 12:23:39.696870 | Duration: 0:00:17.182919 | Code: 0
+correcting the data | Start: 2026-05-08 12:23:39.697661 | End: 2026-05-08 12:23:41.905072 | Duration: 0:00:02.207411 | Code: 0
+mapping the data | Start: 2026-05-08 12:23:41.905652 | End: 2026-05-08 12:23:54.632714 | Duration: 0:00:12.727062 | Code: 0
+merging the member declaration and viewership data for fp | Start: 2026-05-08 12:23:54.633382 | End: 2026-05-08 12:23:59.811455 | Duration: 0:00:05.178073 | Code: 0
+household sessions for fp | Start: 2026-05-08 12:23:59.812067 | End: 2026-05-08 12:24:25.740668 | Duration: 0:00:25.928601 | Code: 0
+member sessions for fp | Start: 2026-05-08 12:24:25.741281 | End: 2026-05-08 12:24:53.894389 | Duration: 0:00:28.153108 | Code: 0
+cleaning | Start: 2026-05-08 12:24:53.895192 | End: 2026-05-08 12:24:54.814322 | Duration: 0:00:00.919130 | Code: 0
+merging sessions without rejuvenation for rejuvenation history file | Start: 2026-05-08 12:24:54.814982 | End: 2026-05-08 12:24:55.544095 | Duration: 0:00:00.729113 | Code: 0
+cleaning for history file | Start: 2026-05-08 12:24:55.544740 | End: 2026-05-08 12:25:08.023287 | Duration: 0:00:12.478547 | Code: 0
+member rejuvenation | Start: 2026-05-08 12:25:08.024088 | End: 2026-05-08 12:25:36.364104 | Duration: 0:00:28.340016 | Code: 0
+now merging the rejuvenated logo and fp files | Start: 2026-05-08 12:25:36.365132 | End: 2026-05-08 12:25:36.968035 | Duration: 0:00:00.602903 | Code: 0
+cleaning for panel file | Start: 2026-05-08 12:25:36.968962 | End: 2026-05-08 12:25:37.544479 | Duration: 0:00:00.575517 | Code: 0
+3 rules | Start: 2026-05-08 12:25:37.545997 | End: 2026-05-08 12:25:39.538851 | Duration: 0:00:01.992854 | Code: 0
+channel clipping | Start: 2026-05-08 12:25:39.542309 | End: 2026-05-08 12:25:43.940184 | Duration: 0:00:04.397875 | Code: 0
+statement file generation | Start: 2026-05-08 12:25:43.940980 | End: 2026-05-08 12:25:44.634294 | Duration: 0:00:00.693314 | Code: 0

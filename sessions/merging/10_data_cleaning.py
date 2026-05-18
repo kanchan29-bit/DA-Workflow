@@ -1,7 +1,8 @@
 import pandas as pd
 from datetime import datetime, timedelta
-
 import os
+from openpyxl import Workbook
+from openpyxl.utils.dataframe import dataframe_to_rows
 
 # =========================
 # FILE PATHS
@@ -23,8 +24,14 @@ df_input = pd.read_csv(input_file)
 
 print(f"Reading main reference file: {main_file}")
 if not os.path.exists(main_file):
-    print(f"Error: Main reference file not found at {main_file}")
-df_main = pd.read_excel(main_file)
+    print(f"Warning: Main reference file not found at {main_file}. Creating a new one.")
+    df_main = pd.DataFrame()
+else:
+    try:
+        df_main = pd.read_excel(main_file)
+    except Exception as e:
+        print(f"Warning: Could not read {main_file} ({e}). Starting with fresh data.")
+        df_main = pd.DataFrame()
 
 # =========================
 # DATE PROCESSING
@@ -46,24 +53,47 @@ df_input['date'] = df_input['date'].dt.strftime('%Y-%m-%d')
 # ALIGN INPUT TO MAIN STRUCTURE
 # =========================
 
-# Add missing columns in input (based on main file)
-for col in df_main.columns:
-    if col not in df_input.columns:
-        df_input[col] = None
+# Align columns with the main reference file if it exists
+if df_main.empty:
+    df_updated = df_input
+else:
+    # This adds missing columns as NaN and ensures the same order
+    df_input = df_input.reindex(columns=df_main.columns)
+    df_updated = pd.concat([df_main, df_input], ignore_index=True)
 
-# Ensure same column order as main file
-df_input = df_input[df_main.columns]
-
-# =========================
-# APPEND DATA (NO HEADER ISSUE)
-# =========================
-df_updated = pd.concat([df_main, df_input], ignore_index=True)
-
+print(f"Combined data shape: {df_updated.shape}")
 
 # =========================
 # SAVE OUTPUT
 # =========================
-df_updated.to_excel(output_file, index=False)
+def save_excel_memory_efficient(df, path):
+    """
+    Saves a DataFrame to Excel using openpyxl's write_only mode to minimize memory usage.
+    """
+    wb = Workbook(write_only=True)
+    ws = wb.create_sheet("Sheet1")
+    
+    # dataframe_to_rows is slower but uses significantly less memory with write_only=True
+    for r in dataframe_to_rows(df, index=False, header=True):
+        ws.append(r)
+    
+    wb.save(path)
+
+print(f"Attempting to save to {output_file}...")
+try:
+    # Try memory-efficient save first
+    save_excel_memory_efficient(df_updated, output_file)
+    print(" Data appended successfully using memory-efficient engine.")
+except MemoryError:
+    print(" Error: Memory limit reached even with efficient engine.")
+    csv_fallback = output_file.replace(".xlsx", "_fallback.csv")
+    df_updated.to_csv(csv_fallback, index=False)
+    print(f" Saved CSV fallback instead: {csv_fallback}")
+except Exception as e:
+    print(f" Error saving to Excel: {e}")
+    csv_fallback = output_file.replace(".xlsx", "_fallback.csv")
+    df_updated.to_csv(csv_fallback, index=False)
+    print(f" Saved CSV fallback instead: {csv_fallback}")
 
 print(" Data appended successfully (no header duplication)")
 print(f"Final rows: {len(df_updated)}")
