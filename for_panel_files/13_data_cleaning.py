@@ -12,7 +12,7 @@ from typing import List
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
-yesterday_date = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
+yesterday_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 INPUT_DIR = os.path.join(BASE_DIR, "sessions", "merging", "Final_merged_file")
 INPUT_PATTERN = "*.csv"  # Get all CSV files, we'll filter by date
 OUTPUT_DIR = os.path.join(BASE_DIR, "for_panel_files", "for_panel")
@@ -23,7 +23,7 @@ CHANNELS_TO_REMOVE = {6, 9, 10, 13, 15, 14}
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ============================================================
-# Helper: convert HH:MM:SS(.ms) -> reporting-day seconds
+# Helper: convert HH:MM:SS(.ms) → reporting-day seconds
 # ============================================================
 def time_to_seconds(t):
     try:
@@ -42,6 +42,39 @@ def time_to_seconds(t):
         return None
 
 # ============================================================
+# NEW FUNCTION: Handles next-day sessions properly
+# Example: 23:00 → 01:00 = 2 hours
+# ============================================================
+def calculate_duration(df):
+
+    if {"date", "start_time", "end_time"}.issubset(df.columns):
+
+        # Create datetime columns
+        df["start_dt"] = pd.to_datetime(
+            df["date"].astype(str) + " " + df["start_time"].astype(str),
+            errors="coerce"
+        )
+
+        df["end_dt"] = pd.to_datetime(
+            df["date"].astype(str) + " " + df["end_time"].astype(str),
+            errors="coerce"
+        )
+
+        # If crossed midnight
+        df.loc[df["end_dt"] < df["start_dt"], "end_dt"] += timedelta(days=1)
+
+        # Duration
+        df["duration_seconds"] = (
+            df["end_dt"] - df["start_dt"]
+        ).dt.total_seconds()
+
+        # Remove invalid rows
+        df = df[df["duration_seconds"] > 0]
+
+    return df
+
+
+# ============================================================
 # NEW FUNCTION: Shift values from s3_date to date and chname to channel
 # ============================================================
 def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -49,7 +82,7 @@ def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
     Shift values from s3_date column to date column, and from chname column to channel column.
     This function is called BEFORE any other processing.
     """
-    print("    Shifting column values (s3_date -> date, chname -> channel)...")
+    print("    Shifting column values (s3_date → date, chname → channel)...")
     
     # Shift s3_date to date column
     if 's3_date' in df.columns:
@@ -120,23 +153,18 @@ CHANNEL_MAP_NORM = {k.strip().lower(): v for k, v in CHANNEL_MAP.items()}
 # ============================================================
 # Utilities - FIXED for DD-MM-YYYY format
 # ============================================================
-# Updated regex to match DD-MM-YYYY or YYYY-MM-DD format
-DATE_REGEX = re.compile(r"(\d{2}-\d{2}-\d{4})|(\d{4}-\d{2}-\d{2})")
+# Updated regex to match DD-MM-YYYY format
+DATE_REGEX = re.compile(r"(\d{4}-\d{2}-\d{2})")  # Matches DD-MM-YYYY
 
 def extract_date_from_filename(filename: str):
     match = DATE_REGEX.search(filename)
     if not match:
         return None
-    
-    date_str = match.group(0)
-    
-    # Try parsing both formats
-    for fmt in ["%d-%m-%Y", "%Y-%m-%d"]:
-        try:
-            return datetime.strptime(date_str, fmt).date()
-        except ValueError:
-            continue
-    return None
+    try:
+        # Parse DD-MM-YYYY format
+        return datetime.strptime(match.group(1), "%Y-%m-%d").date()
+    except ValueError:
+        return None
 
 def get_files_in_date_range(start_date, end_date) -> List[str]:
     files = glob.glob(os.path.join(INPUT_DIR, INPUT_PATTERN))
@@ -222,8 +250,8 @@ def process_file(file_path: str):
         first_date = df["date"].iloc[0]
         if isinstance(first_date, str):
             try:
-                date_obj = datetime.strptime(first_date, "%d-%m-%Y")
-                date_str = date_obj.strftime("%d-%m-%Y")
+                date_obj = datetime.strptime(first_date, "%Y-%m-%d")
+                date_str = date_obj.strftime("%Y-%m-%d")
             except:
                 date_str = yesterday_date
         else:
@@ -236,7 +264,7 @@ def process_file(file_path: str):
     df.to_csv(output_file, index=False)
 
     print(
-        f" Rows: {original_rows} -> {cleaned_rows} | "
+        f" Rows: {original_rows} → {cleaned_rows} | "
         f" Removed: {removed_count} | "
         f"Saved: {output_file}"
     )
@@ -251,9 +279,9 @@ def main():
     # Get yesterday's date (as date object for comparison)
     # --------------------------------------------------------
     yesterday = (datetime.now() - timedelta(days=1)).date()
-    yesterday_str = yesterday.strftime("%d-%m-%Y")  # For matching filenames
+    yesterday_str = yesterday.strftime("%Y-%m-%d")  # For matching filenames
 
-    print(f"Target date: {yesterday_str}")
+    print(f"📆 Target date: {yesterday_str}")
 
     # --------------------------------------------------------
     # Get all CSV files and filter for yesterday's date

@@ -35,6 +35,17 @@ def to_str(dt):
 def sec_to_hms(sec):
     return str(timedelta(seconds=int(sec)))
 
+def make_start_secs(t):
+    """
+    Convert HH:MM:SS to seconds.
+    Supports hours >= 24 also.
+    Example:
+    01:30:00 = 5400
+    25:30:00 = 91800
+    """
+    hh, mm, ss = map(int, t.split(":"))
+    return hh * 3600 + mm * 60 + ss
+
 # ===============================
 # READ DATA
 # ===============================
@@ -43,6 +54,10 @@ df = pd.read_csv(INPUT_CSV)
 # normalize times
 df["start_dt"] = df["start_time"].apply(to_dt)
 df["end_dt"]   = df["end_time"].apply(to_dt)
+
+# If start_secs missing, create it
+if "start_secs" not in df.columns:
+    df["start_secs"] = df["start_time"].apply(make_start_secs)
 
 # sort correctly using YOUR columns
 df = df.sort_values(

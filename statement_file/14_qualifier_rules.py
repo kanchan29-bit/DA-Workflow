@@ -12,16 +12,10 @@ from sqlalchemy import create_engine
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
-yesterday_obj = datetime.now() - timedelta(days=1)
-yesterday_dmy = yesterday_obj.strftime("%d-%m-%Y")
-yesterday_ymd = yesterday_obj.strftime("%Y-%m-%d")
+yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 
-# Search for both possible filename patterns
-pattern_dmy = os.path.join(BASE_DIR, "for_panel_files", "for_panel", f"{yesterday_dmy}_cleaned.csv")
-pattern_ymd = os.path.join(BASE_DIR, "for_panel_files", "for_panel", f"{yesterday_ymd}_cleaned.csv")
-
-# We'll use glob to find whichever one exists
-INPUT_PATTERN = [pattern_dmy, pattern_ymd]
+# Use raw strings for Windows paths
+INPUT_PATTERN = os.path.join(BASE_DIR, "for_panel_files", "for_panel", f"{yesterday}_cleaned.csv")
 OUTPUT_DIR = os.path.join(BASE_DIR, "statement_file", "qualifier_output")
 
 TOTAL_LIMIT = 50400       # 14 hours
@@ -159,13 +153,9 @@ def parse_flexible_datetime(date_str, time_str):
 # ============================================================
 # LOAD FILES
 # ============================================================
-# Try each pattern
-files = []
-for p in INPUT_PATTERN:
-    files.extend(glob.glob(p))
-
+files = glob.glob(INPUT_PATTERN)
 if not files:
-    raise FileNotFoundError(f"No CSV files found matching patterns: {INPUT_PATTERN}")
+    raise FileNotFoundError(f"No CSV files found matching pattern: {INPUT_PATTERN}")
 
 # ============================================================
 # PROCESS FILES
@@ -173,6 +163,8 @@ if not files:
 for file_path in files:
     df = pd.read_csv(file_path)
     original_rows = len(df)
+
+    
 
     # ========================================================
     # ADD REGION
@@ -280,7 +272,7 @@ for file_path in files:
     # Standardize date column
     df["date"] = df["start_dt"].dt.strftime("%Y-%m-%d")
     
-    # Handle end time in 00 or 01 -> next day
+    # Handle end time in 00 or 01 → next day
     df.loc[
         (df["end_dt"].dt.hour.isin([0, 1])) & 
         (df["end_dt"] < df["start_dt"]),
@@ -431,7 +423,7 @@ for file_path in files:
 
     # Convert date to dd-mm-yy format for filename
     date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-    formatted_date = date_obj.strftime("%d-%m-%Y")
+    formatted_date = date_obj.strftime("%Y-%m-%d")
     out_file = os.path.join(OUTPUT_DIR, f"{formatted_date}_ruled.csv")
     final_df.to_csv(out_file, index=False)
 

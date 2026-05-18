@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
-yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
+yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 INPUT_FILE = os.path.join(BASE_DIR, "statement_file", "qualifier_output", f"{yesterday}_ruled_PROCESSED.csv")
 OUTPUT_FOLDER = os.path.join(BASE_DIR, "statement_file", "statement")
 OUTPUT_FILE_NAME = f"{yesterday}_statement.csv"
@@ -41,13 +41,13 @@ CHANNEL_MAP = {
 }
 
 # ===============================
-# FUNCTION: TIME -> SECONDS
+# FUNCTION: TIME → SECONDS
 # ===============================
 def convert_time_to_seconds(time_str):
     h, m, s = map(int, time_str.split(":"))
     seconds = h * 3600 + m * 60 + s
 
-    # If hour is 00 or 01 -> next day continuation
+    # If hour is 00 or 01 → next day continuation
     if h in [0, 1]:
         seconds += 86400
 
@@ -59,7 +59,7 @@ def convert_time_to_seconds(time_str):
 df = pd.read_csv(INPUT_FILE)
 
 # ===============================
-# START TIME -> SECONDS
+# START TIME → SECONDS
 # ===============================
 if "start_time_secs" in df.columns:
     df = df.drop(columns=["start_time_secs"])
@@ -90,12 +90,12 @@ df = df[~df["channelid"].isin([10, 13, 14,15, 99])]
 print(f"Rows removed: {initial_rows - len(df)}")
 
 # ===============================
-# REMOVE SHORT SESSIONS (NEW RULE)
+# REMOVE SHORT SESSIONS (ZERO SECONDS)
 # ===============================
-# if "duration_seconds" in df.columns:
-#     before_filter = len(df)
-#     df = df[df["duration_seconds"] > 5]
-#     print(f"Rows removed (duration <= 5 sec): {before_filter - len(df)}")
+if "duration_seconds" in df.columns:
+    before_filter = len(df)
+    df = df[df["duration_seconds"] != 0]
+    print(f"Rows removed (duration != 0 sec): {before_filter - len(df)}")
 # else:
 #     print("Warning: 'duration_secs' column not found!")
 

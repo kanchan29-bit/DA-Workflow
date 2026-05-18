@@ -27,7 +27,7 @@ import os
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 
-yesterday = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
+yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 RAW_FILE_PATH = os.path.join(BASE_DIR, "statement_file", "qualifier_output", f"{yesterday}_ruled.csv")
 
 from dotenv import load_dotenv
@@ -55,8 +55,8 @@ DB_PASSWORD = os.getenv("DB_PASSWORD")
 raw_df = pd.read_csv(RAW_FILE_PATH)
 
 file_date = datetime.strptime(
-    re.search(r'(\d{2}-\d{2}-\d{4})', RAW_FILE_PATH).group(1),
-    "%d-%m-%Y"
+    re.search(r'(\d{4}-\d{2}-\d{2})', RAW_FILE_PATH).group(1),
+    "%Y-%m-%d"
 ).date()
 
 raw_df['date'] = file_date
@@ -92,7 +92,7 @@ db_df = pd.read_sql(query, conn)
 
 conn.close()
 
-# IMPORTANT: deduplicate HHID -> region mapping
+# IMPORTANT: deduplicate HHID → region mapping
 master_df = db_df[['hhid','region']].drop_duplicates()
 
 # rename to match your pipeline
@@ -161,7 +161,6 @@ p_stats = (
     indi_day
     .groupby(['City_group','channelid'])['Actual_Duration']
     .agg(
-        P95=lambda x: int(np.percentile(x,95)),
         P99=lambda x: int(np.percentile(x,99))
     )
     .reset_index()
@@ -194,7 +193,7 @@ def final_target(r):
         return r['Actual_Duration']
     if r['uniqueviewercount'] < 5:
         return 0
-    return min(r['Actual_Duration'], r['P95'], r['absolute cap sec'])
+    return min(r['Actual_Duration'], r['P99'], r['absolute cap sec'])
 
 cap_df['Target_Duration'] = cap_df.apply(final_target, axis=1)
 cap_df['Capped Value'] = cap_df['Target_Duration']
@@ -209,8 +208,8 @@ cap_df['Rule_Label'] = np.where(
     'Excluded channel – No cap',
     np.where(
         cap_df['uniqueviewercount'] < 5,
-        'Low sample (<5) -> Zero',
-        'P95 + Absolute cap'
+        'Low sample (<5) → Zero',
+        'P99 + Absolute cap'
     )
 )
 

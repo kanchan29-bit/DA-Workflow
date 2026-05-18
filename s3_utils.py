@@ -20,11 +20,9 @@ S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
 S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
 S3_REGION = os.getenv("S3_REGION", "ap-south-1")
 
-# Bucket for downloading FP input files
 S3_INPUT_BUCKET = os.getenv("S3_INPUT_BUCKET", "meter-fp-sorted")
 S3_PREFIX_BASE = os.getenv("S3_PREFIX_BASE", "")
 
-# Bucket for uploading pipeline outputs
 S3_OUTPUT_BUCKET = os.getenv("S3_OUTPUT_BUCKET", "indi-analytics-output")
 S3_OUTPUT_PREFIX = os.getenv("S3_OUTPUT_PREFIX", "DA-Output")
 
@@ -32,7 +30,6 @@ S3_OUTPUT_PREFIX = os.getenv("S3_OUTPUT_PREFIX", "DA-Output")
 # S3 CLIENT
 # ============================================================
 def get_s3_client():
-    """Create and return a boto3 S3 client with configured credentials."""
     return boto3.client(
         "s3",
         region_name=S3_REGION,
@@ -44,11 +41,6 @@ def get_s3_client():
 # DOWNLOAD
 # ============================================================
 def download_file(bucket, key, local_path):
-    """
-    Download a single file from S3.
-    Returns True if successful, False if the key does not exist.
-    Raises on other errors.
-    """
     s3 = get_s3_client()
     os.makedirs(os.path.dirname(local_path), exist_ok=True)
 
@@ -64,34 +56,71 @@ def download_file(bucket, key, local_path):
 # UPLOAD
 # ============================================================
 def upload_file(local_path, bucket, key):
-    """
-    Upload a single local file to S3.
-    Returns True on success.
-    """
     s3 = get_s3_client()
     s3.upload_file(local_path, bucket, key)
     return True
 
+# ============================================================
+# DATE HANDLING
+# ============================================================
+def parse_date_flex(date_str):
+    """
+    Parse date in:
+    - DD-MM-YYYY
+    - YYYY-MM-DD
+    """
+    for fmt in ("%d-%m-%Y", "%Y-%m-%d"):
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"Unsupported date format: {date_str}")
 
+
+def generate_date_formats(date_str):
+    """
+    Generate both formats for lookup:
+    - DD-MM-YYYY
+    - YYYY-MM-DD
+    """
+    date_obj = parse_date_flex(date_str)
+    return [
+        date_obj.strftime("%d-%m-%Y"),
+        date_obj.strftime("%Y-%m-%d"),
+    ]
+
+# ============================================================
+# FLEXIBLE FILE FINDER (NEW FIX)
+# ============================================================
+def find_file_with_date(folder, suffix, date_str):
+    """
+    Find file by checking all files in folder and matching:
+    - date in either format
+    - correct suffix
+    """
+    date_formats = generate_date_formats(date_str)
+
+    if not os.path.exists(folder):
+        return None
+
+    for file in os.listdir(folder):
+        for d in date_formats:
+            if file.startswith(d) and file.endswith(suffix):
+                return os.path.join(folder, file)
+
+    return None
+
+# ============================================================
+# PIPELINE UPLOAD
+# ============================================================
 def upload_pipeline_output(local_path, category, filename, date_str=None):
-    """
-    Upload a pipeline output file to S3 in a structured folder.
-
-    S3 path: {S3_OUTPUT_PREFIX}/{date_str}/{category}/{filename}
-
-    Parameters
-    ----------
-    local_path : str
-        Absolute path to the local file to upload.
-    category : str
-        Subfolder name (e.g. 'logo', 'fp', 'statement').
-    filename : str
-        Destination filename (should NOT include date).
-    date_str : str, optional
-        Date folder name in DD-MM-YYYY format. Defaults to yesterday.
-    """
     if date_str is None:
-        date_str = (datetime.now() - timedelta(days=1)).strftime("%d-%m-%Y")
+        date_obj = datetime.now() - timedelta(days=1)
+    else:
+        date_obj = parse_date_flex(date_str)
+
+    # Always normalize for S3
+    date_str = date_obj.strftime("%d-%m-%Y")
 
     key = f"{S3_OUTPUT_PREFIX}/{date_str}/{category}/{filename}"
 
@@ -99,3 +128,22 @@ def upload_pipeline_output(local_path, category, filename, date_str=None):
     upload_file(local_path, S3_OUTPUT_BUCKET, key)
     print(f"  Upload complete: {key}")
     return key
+
+# ============================================================
+# EXAMPLE USAGE (FIXED SKIP ISSUE)
+# ============================================================
+def upload_with_fallback(folder, suffix, category, output_filename, date_str):
+    """
+    Wrapper to:
+    - find file in either date format
+    - upload if found
+    - skip if not found
+    """
+    file_path = find_file_with_date(folder, suffix, date_str)
+
+    if file_path:
+        upload_pipeline_output(file_path, category, output_filename, date_str)
+        return "uploaded"
+    else:
+        print(f"  SKIP (not found): {folder}/{date_str}{suffix}")
+        return "skipped"
