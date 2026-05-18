@@ -106,7 +106,7 @@ else:
             with open(filepath, "wb") as f:
                 f.write(part.get_payload(decode=True))
 
-            print(f"📥 Downloaded: {filename}")
+            print(f"Download: {filename}")
 
             # Extract ZIP
             with zipfile.ZipFile(filepath, 'r') as zip_ref:

@@ -68,12 +68,12 @@ for hhid, hh_df in member_df.sort_values("decl_dt").groupby("hhid"):
             active = m.get("active", False)
 
 
-            # ACTIVE → start if not already active
+            # ACTIVE - start if not already active
             if active:
                 if mid not in state:
                     state[mid] = decl_time
 
-            # INACTIVE → close if currently active
+            # INACTIVE - close if currently active
             else:
                 if mid in state:
                     member_sessions.append({
@@ -133,7 +133,7 @@ for _, ch in channel_df.iterrows():
 
             final_rows.append(row)
 
-    # no active members → keep channel session as-is
+    # no active members - keep channel session as-is
     if not matched:
         row = ch.copy()
         row["member_id"] = ""

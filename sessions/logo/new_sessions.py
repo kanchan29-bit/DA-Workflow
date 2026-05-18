@@ -334,7 +334,7 @@ def fetch_events_from_postgres(start_date_str, end_date_str, db_config):
       AND timestamp BETWEEN {start_ts} AND {end_ts}
     ORDER BY hhid ASC, timestamp ASC;
     """
-    print(f" Querying events from {start_dt_local} to {end_dt_local} (UNIX: {start_ts} → {end_ts})")
+    print(f" Querying events from {start_dt_local} to {end_dt_local} (UNIX: {start_ts} - {end_ts})")
     conn = psycopg2.connect(**db_config)
     df = pd.read_sql(query, conn)
     conn.close()

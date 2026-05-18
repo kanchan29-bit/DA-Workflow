@@ -23,7 +23,7 @@ CHANNELS_TO_REMOVE = {6, 9, 10, 13, 15, 14}
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ============================================================
-# Helper: convert HH:MM:SS(.ms) → reporting-day seconds
+# Helper: convert HH:MM:SS(.ms) - reporting-day seconds
 # ============================================================
 def time_to_seconds(t):
     try:
@@ -49,7 +49,7 @@ def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
     Shift values from s3_date column to date column, and from chname column to channel column.
     This function is called BEFORE any other processing.
     """
-    print("    Shifting column values (s3_date → date, chname → channel)...")
+    print("    Shifting column values (s3_date - date, chname - channel)...")
     
     # Shift s3_date to date column
     if 's3_date' in df.columns:
@@ -231,7 +231,7 @@ def process_file(file_path: str):
     df.to_csv(output_file, index=False)
 
     print(
-        f" Rows: {original_rows} → {cleaned_rows} | "
+        f" Rows: {original_rows} - {cleaned_rows} | "
         f" Removed: {removed_count} | "
         f"Saved: {output_file}"
     )
