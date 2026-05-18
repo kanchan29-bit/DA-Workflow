@@ -281,7 +281,7 @@ def main():
     yesterday = (datetime.now() - timedelta(days=1)).date()
     yesterday_str = yesterday.strftime("%Y-%m-%d")  # For matching filenames
 
-    print(f"📆 Target date: {yesterday_str}")
+    print(f" Target date: {yesterday_str}")
 
     # --------------------------------------------------------
     # Get all CSV files and filter for yesterday's date
