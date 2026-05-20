@@ -192,14 +192,86 @@ body {
 }
 
 .btn-icon {
-    padding: 6px;
-    background: transparent;
-    border: 1px solid transparent;
+    padding: 8px;
+    min-width: 44px;
+    justify-content: center;
+    background-color: rgba(255,255,255,0.06);
+    border-color: rgba(255,255,255,0.08);
 }
 
 .btn-icon:hover {
     background: var(--bg-surface-hover);
     border-color: var(--border-subtle);
+}
+
+.run-button-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+}
+
+.date-picker-popover {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 12px);
+    width: 320px;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 18px;
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+}
+
+.date-picker-popover label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.date-picker-popover input[type="date"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    margin-bottom: 14px;
+}
+
+.date-picker-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+}
+
+.date-picker-help {
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+}
+
+.artifacts-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.artifacts-filter-row label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.artifacts-filter-row input[type="date"] {
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    background-color: var(--bg-base);
+    color: var(--text-primary);
 }
 
 .btn:disabled {
@@ -488,6 +560,107 @@ body {
 
 .data-table tbody tr:hover {
     background-color: var(--bg-surface-hover);
+}
+
+.artifacts-accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.artifact-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.artifact-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 18px 20px;
+    cursor: pointer;
+    gap: 16px;
+}
+
+.artifact-card-header:hover {
+    background-color: var(--bg-surface-hover);
+}
+
+.artifact-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.artifact-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.artifact-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    align-items: center;
+}
+
+.artifact-expand {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.artifact-card[open] .artifact-expand::before {
+    content: 'Collapse';
+}
+
+.artifact-card-body {
+    padding: 16px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-top: 1px solid var(--border-subtle);
+}
+
+.artifact-file-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-base);
+}
+
+.artifact-file-row:hover {
+    border-color: var(--text-secondary);
+}
+
+.artifact-file-label {
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.artifact-file-path {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.artifact-download-btn {
+    padding: 10px 18px;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.empty-state {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-secondary);
 }
 
 /* Utils */

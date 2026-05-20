@@ -9,10 +9,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const navItems = document.querySelectorAll('.nav-item');
     const viewSections = document.querySelectorAll('.view-section');
     const btnRunWorkflow = document.getElementById('run-workflow-btn');
+    const btnRunDate = document.getElementById('run-date-btn');
+    const runDatePicker = document.getElementById('run-date-picker');
+    const workflowDateInput = document.getElementById('workflow-date-input');
+    const btnRunSelectedDate = document.getElementById('run-selected-date-btn');
+    const btnCloseRunDatePicker = document.getElementById('close-run-date-picker');
+    const workflowsList = document.getElementById('workflows-list');
     const btnBackToWorkflows = document.getElementById('back-to-workflows');
     const btnRetryWorkflow = document.getElementById('retry-workflow-btn');
-    const workflowsList = document.getElementById('workflows-list');
-    const artifactsTbody = document.getElementById('artifacts-tbody');
+    const artifactsFilterDate = document.getElementById('artifact-filter-date');
+    const artifactFilterApply = document.getElementById('artifact-filter-apply');
+    const artifactFilterClear = document.getElementById('artifact-filter-clear');
+    const artifactsListContainer = document.getElementById('artifacts-list');
     
     // Detail View Elements
     const detailTitle = document.getElementById('detail-workflow-title');
@@ -64,6 +72,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    let artifactRuns = [];
+    let artifactFilterDateValue = '';
+
+    const setDateInputLimits = () => {
+        const today = new Date().toISOString().split('T')[0];
+        workflowDateInput.max = today;
+        artifactsFilterDate.max = today;
+        workflowDateInput.value = today;
+    };
+
+    const closeRunDatePicker = () => {
+        runDatePicker.classList.add('hidden');
+    };
+
+    const openRunDatePicker = () => {
+        runDatePicker.classList.toggle('hidden');
+        if (!runDatePicker.classList.contains('hidden')) {
+            workflowDateInput.focus();
+        }
+    };
+
+    const handleDocumentClick = (event) => {
+        const target = event.target;
+        if (!runDatePicker.contains(target) && !btnRunDate.contains(target)) {
+            runDatePicker.classList.add('hidden');
+        }
+    };
+
+    const runWorkflowForDate = async (dateStr = null) => {
+        btnRunWorkflow.disabled = true;
+        btnRunDate.disabled = true;
+        const originalLabel = btnRunWorkflow.innerHTML;
+        btnRunWorkflow.innerHTML = '<span class="material-symbols-outlined spinning">sync</span> Starting...';
+
+        try {
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: dateStr ? JSON.stringify({ date: dateStr }) : null
+            };
+            const res = await fetch('/api/workflow/run', options);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to start run');
+
+            showToast('Workflow started successfully.');
+            closeRunDatePicker();
+            openRunDetails(data.run_id);
+        } catch (error) {
+            showToast(error.message);
+        } finally {
+            btnRunWorkflow.disabled = false;
+            btnRunDate.disabled = false;
+            btnRunWorkflow.innerHTML = originalLabel;
+        }
+    };
+
     // --- Navigation ---
     const switchView = (targetId) => {
         currentView = targetId;
@@ -109,7 +173,8 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const res = await fetch('/api/artifacts');
             const data = await res.json();
-            renderArtifacts(data);
+            artifactRuns = Array.isArray(data) ? data : [];
+            renderArtifacts(artifactRuns);
         } catch (error) {
             showToast('Failed to load artifacts.');
         }
@@ -126,21 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const triggerRun = async () => {
-        btnRunWorkflow.disabled = true;
-        btnRunWorkflow.innerHTML = '<span class="material-symbols-outlined spinning">sync</span> Starting...';
-        try {
-            const res = await fetch('/api/workflow/run', { method: 'POST' });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Failed to start run');
-            
-            showToast('Workflow started successfully.');
-            openRunDetails(data.run_id);
-        } catch (error) {
-            showToast(error.message);
-        } finally {
-            btnRunWorkflow.disabled = false;
-            btnRunWorkflow.innerHTML = '<span class="material-symbols-outlined">play_arrow</span> Run Workflow';
-        }
+        await runWorkflowForDate();
     };
 
     const retryRun = async () => {
@@ -163,7 +214,31 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     btnRunWorkflow.addEventListener('click', triggerRun);
+    btnRunDate.addEventListener('click', openRunDatePicker);
+    btnRunSelectedDate.addEventListener('click', () => {
+        const selectedDate = workflowDateInput.value;
+        if (!selectedDate) {
+            showToast('Please select a valid date before running.');
+            return;
+        }
+        runWorkflowForDate(selectedDate);
+    });
+    btnCloseRunDatePicker.addEventListener('click', () => {
+        closeRunDatePicker();
+    });
+    document.addEventListener('click', handleDocumentClick);
+    artifactFilterApply.addEventListener('click', () => {
+        artifactFilterDateValue = artifactsFilterDate.value;
+        renderArtifacts(artifactRuns);
+    });
+    artifactFilterClear.addEventListener('click', () => {
+        artifactsFilterDate.value = '';
+        artifactFilterDateValue = '';
+        renderArtifacts(artifactRuns);
+    });
     btnRetryWorkflow.addEventListener('click', retryRun);
+
+    setDateInputLimits();
 
     // --- Rendering ---
     const renderWorkflows = (runs) => {
@@ -198,22 +273,50 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const renderArtifacts = (runs) => {
+        const artifactsList = document.getElementById('artifacts-list');
         if (!runs || runs.length === 0) {
-            artifactsTbody.innerHTML = '<tr><td colspan="5" style="text-align: center">No successful runs found.</td></tr>';
+            artifactsList.innerHTML = '<div class="empty-state"><p>No successful runs found.</p></div>';
             return;
         }
-        artifactsTbody.innerHTML = runs.map(run => `
-            <tr>
-                <td>${run.date}</td>
-                <td><span class="status-badge ${getStatusClass(run.status)}">${run.status}</span></td>
-                <td>${run.trigger_type}</td>
-                <td>${formatDuration(run.duration_seconds)}</td>
-                <td>
-                    <a class="btn btn-secondary" href="/api/artifacts/${run.id}/download" target="_blank">
-                        <span class="material-symbols-outlined">download</span> Download
-                    </a>
-                </td>
-            </tr>
+
+        const sortedRuns = [...runs].sort((a, b) => b.date.localeCompare(a.date));
+        const filteredRuns = artifactFilterDateValue
+            ? sortedRuns.filter(run => run.date === artifactFilterDateValue)
+            : sortedRuns;
+
+        if (!filteredRuns.length) {
+            artifactsList.innerHTML = '<div class="empty-state"><p>No runs match the selected date.</p></div>';
+            return;
+        }
+
+        artifactsList.innerHTML = filteredRuns.map(run => `
+            <details class="artifact-card">
+                <summary class="artifact-card-header">
+                    <div class="artifact-header-left">
+                        <div class="artifact-title">${run.date}</div>
+                        <div class="artifact-meta">
+                            <span class="status-badge ${getStatusClass(run.status)}">${run.status}</span>
+                            <span>${run.trigger_type}</span>
+                            <span>${formatDuration(run.duration_seconds)}</span>
+                        </div>
+                    </div>
+                    <span class="artifact-expand">Expand</span>
+                </summary>
+                <div class="artifact-card-body">
+                    ${run.files && run.files.length ? run.files.map(file => `
+                        <div class="artifact-file-row">
+                            <div>
+                                <div class="artifact-file-label">${file.label}</div>
+                                <div class="artifact-file-path">${file.category}/${file.filename}</div>
+                            </div>
+                            <a class="btn artifact-download-btn" href="/api/artifacts/${run.id}/download-file/${encodeURIComponent(file.filename)}" target="_blank">
+                                <span class="material-symbols-outlined">download</span>
+                                Download
+                            </a>
+                        </div>
+                    `).join('') : '<div class="empty-state"><p>No artifact files available.</p></div>'}
+                </div>
+            </details>
         `).join('');
     };
 

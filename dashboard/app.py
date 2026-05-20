@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, render_template, Response
 import os
 import json
 import queue
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Adjust sys.path to find dashboard module
 import sys
@@ -10,6 +10,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from dashboard.models import init_db, get_recent_runs, get_run_details, check_run_exists_for_date, create_run, get_successful_runs
 from dashboard.runner import run_pipeline, log_queues
+from s3_utils import get_s3_client, S3_OUTPUT_BUCKET, S3_OUTPUT_PREFIX, S3_OUTPUT_REGION, parse_date_flex
+from botocore.exceptions import ClientError
 
 app = Flask(__name__)
 
@@ -36,13 +38,28 @@ def get_run(run_id):
 
 @app.route('/api/workflow/run', methods=['POST'])
 def start_run():
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    
-    if check_run_exists_for_date(today_str):
-        return jsonify({"error": f"A run for {today_str} is already active or successful."}), 400
-        
-    run_id = create_run(today_str, trigger_type="manual")
-    run_pipeline(run_id)
+    data = request.get_json(silent=True) or {}
+    requested_date = data.get('date')
+
+    if requested_date:
+        try:
+            requested_date_obj = parse_date_flex(requested_date).date()
+        except Exception:
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
+    else:
+        requested_date_obj = datetime.now().date()
+
+    min_date = datetime(2026, 1, 1).date()
+    max_date = datetime.now().date()
+    if requested_date_obj < min_date or requested_date_obj > max_date:
+        return jsonify({"error": "Date must be between 2026-01-01 and today."}), 400
+
+    date_str = requested_date_obj.strftime("%Y-%m-%d")
+    if check_run_exists_for_date(date_str):
+        return jsonify({"error": f"A run for {date_str} is already active or successful."}), 400
+
+    run_id = create_run(date_str, trigger_type="manual")
+    run_pipeline(run_id, date_str=date_str)
     return jsonify({"run_id": run_id, "status": "Started"}), 201
 
 @app.route('/api/workflow/runs/<int:run_id>/retry', methods=['POST'])
@@ -57,66 +74,119 @@ def retry_run(run_id):
             if step["status"] in ["Failed", "Skipped"]:
                 start_step_index = i
                 break
-                
-    today_str = datetime.now().strftime("%Y-%m-%d")
-    new_run_id = create_run(today_str, trigger_type=f"retry_{run_id}")
-    run_pipeline(new_run_id, start_step_index=start_step_index)
+
+    date_str = run.get('date') or datetime.now().strftime("%Y-%m-%d")
+    new_run_id = create_run(date_str, trigger_type=f"retry_{run_id}")
+    run_pipeline(new_run_id, start_step_index=start_step_index, date_str=date_str)
     return jsonify({"run_id": new_run_id, "status": "Retried"}), 201
+
+ARTIFACT_FILE_MAP = [
+    {"label": "Logo Sessions", "category": "logo", "filename": "logo_sessions.csv"},
+    {"label": "FP Sessions", "category": "fp", "filename": "fp_sessions.csv"},
+    {"label": "Sessions without Rejuvenation", "category": "merging", "filename": "Sessions_without_Rejuvenation.csv"},
+    {"label": "Rejuvenated Sessions (Logo)", "category": "merging", "filename": "Sessions_with_rejuvenation_logo.csv"},
+    {"label": "Rejuvenated Sessions (FP)", "category": "merging", "filename": "Sessions_with_rejuvenation_FP.csv"},
+    {"label": "Final Merged Sessions", "category": "merging", "filename": "Sessions_final_merged.csv"},
+    {"label": "Panel Cleaned File", "category": "for_panel", "filename": "cleaned.csv"},
+    {"label": "Qualifier Ruled File", "category": "qualifier", "filename": "ruled.csv"},
+    {"label": "Qualifier Ruled Processed", "category": "qualifier", "filename": "ruled_PROCESSED.csv"},
+    {"label": "Statement File", "category": "statement", "filename": "statement.csv"},
+]
+
+
+def build_artifact_files(date_str):
+    try:
+        run_date_obj = parse_date_flex(date_str)
+    except ValueError:
+        run_date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+
+    # The upload pipeline stores outputs under yesterday's folder date.
+    s3_date = (run_date_obj - timedelta(days=1)).strftime("%d-%m-%Y")
+
+    files = []
+    for item in ARTIFACT_FILE_MAP:
+        key = f"{S3_OUTPUT_PREFIX}/{s3_date}/{item['category']}/{item['filename']}"
+        url = f"https://{S3_OUTPUT_BUCKET}.s3.{S3_OUTPUT_REGION}.amazonaws.com/{key}"
+        files.append({
+            "label": item["label"],
+            "category": item["category"],
+            "filename": item["filename"],
+            "key": key,
+            "url": url,
+        })
+    return files
 
 @app.route('/api/artifacts', methods=['GET'])
 def list_artifacts():
     runs = get_successful_runs()
+    for run in runs:
+        run["files"] = build_artifact_files(run["date"])
     return jsonify(runs)
+
+@app.route('/api/artifacts/<int:run_id>/download-file/<path:filename>', methods=['GET'])
+def download_artifact_file(run_id, filename):
+    from flask import Response, stream_with_context
+
+    run = get_run_details(run_id)
+    if not run:
+        return jsonify({"error": "Run not found"}), 404
+
+    files = build_artifact_files(run["date"])
+    match = next((item for item in files if item["filename"] == filename), None)
+    if not match:
+        return jsonify({"error": "File not found"}), 404
+
+    s3 = get_s3_client()
+    try:
+        obj = s3.get_object(Bucket=S3_OUTPUT_BUCKET, Key=match["key"])
+    except ClientError as e:
+        code = e.response.get("Error", {}).get("Code")
+        if code in ["NoSuchKey", "404"]:
+            return jsonify({"error": "File not found"}), 404
+        if code == "AccessDenied":
+            return jsonify({"error": "Access denied"}), 403
+        raise
+
+    body = obj['Body']
+    response = Response(
+        stream_with_context(body.iter_chunks(chunk_size=8192)),
+        mimetype=obj.get('ContentType', 'application/octet-stream'),
+        headers={
+            'Content-Disposition': f'attachment; filename="{filename}"'
+        }
+    )
+    return response
 
 @app.route('/api/artifacts/<int:run_id>/download', methods=['GET'])
 def download_artifacts(run_id):
     import io
     import zipfile
     from flask import send_file
-    
+
     run = get_run_details(run_id)
     if not run:
         return jsonify({"error": "Run not found"}), 404
-        
-    date_str = run["date"]
-    
-    # Parse dates from the run date string (YYYY-MM-DD format from DB)
-    try:
-        run_date_obj = datetime.strptime(date_str, "%Y-%m-%d")
-        date_ymd = run_date_obj.strftime("%Y-%m-%d")
-        date_dmy = run_date_obj.strftime("%d-%m-%Y")
-    except ValueError:
-        return jsonify({"error": "Invalid run date format"}), 500
 
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    
-    # Define files to include based on 17_upload_to_s3.py structure
-    files_to_zip = [
-        os.path.join("sessions", "logo", "household_viewership_memberwise_output", f"{date_ymd}_logo_sessions.csv"),
-        os.path.join("sessions", "fp", "output", f"{date_ymd}_fp_sessions.csv"),
-        os.path.join("sessions", "merging", "sessions_without_rejuvenation", f"{date_ymd}_Sessions.csv"),
-        os.path.join("sessions", "merging", "sessions_with_rejuvenation", f"{date_ymd}Members_Updatedlogo.csv"),
-        os.path.join("sessions", "merging", "sessions_with_rejuvenation", f"{date_ymd}Members_UpdatedFP.csv"),
-        os.path.join("sessions", "merging", "Final_merged_file", f"{date_ymd}_Sessions.csv"),
-        os.path.join("for_panel_files", "for_panel", f"{date_dmy}_cleaned.csv"),
-        os.path.join("statement_file", "qualifier_output", f"{date_dmy}_ruled.csv"),
-        os.path.join("statement_file", "qualifier_output", f"{date_dmy}_ruled_PROCESSED.csv"),
-        os.path.join("statement_file", "statement", f"{date_dmy}_statement.csv")
-    ]
-    
+    files = build_artifact_files(run["date"])
     memory_file = io.BytesIO()
     with zipfile.ZipFile(memory_file, 'w', zipfile.ZIP_DEFLATED) as zf:
-        for rel_path in files_to_zip:
-            abs_path = os.path.join(base_dir, rel_path)
-            if os.path.exists(abs_path):
-                zf.write(abs_path, arcname=os.path.basename(abs_path))
-                
+        s3 = get_s3_client()
+        for item in files:
+            try:
+                obj = s3.get_object(Bucket=S3_OUTPUT_BUCKET, Key=item["key"])
+                content = obj['Body'].read()
+                zf.writestr(item["filename"], content)
+            except ClientError as e:
+                if e.response.get("Error", {}).get("Code") in ["NoSuchKey", "404", "NoSuchBucket"]:
+                    continue
+                raise
+
     memory_file.seek(0)
     return send_file(
         memory_file,
         mimetype='application/zip',
         as_attachment=True,
-        download_name=f"DA_Workflow_Artifacts_{date_str}.zip"
+        download_name=f"DA_Workflow_Artifacts_{run['date']}.zip"
     )
 
 @app.route('/api/workflow/stream')

@@ -43,10 +43,24 @@
             <div id="workflows-view" class="view-section active">
                 <header class="view-header">
                     <h2>Workflow Executions</h2>
-                    <button id="run-workflow-btn" class="btn btn-primary">
-                        <span class="material-symbols-outlined">play_arrow</span>
-                        Run Workflow
-                    </button>
+                    <div class="run-button-group">
+                        <button id="run-workflow-btn" class="btn btn-primary">
+                            <span class="material-symbols-outlined">play_arrow</span>
+                            Run Workflow
+                        </button>
+                        <button id="run-date-btn" class="btn btn-primary btn-icon">
+                            <span class="material-symbols-outlined">arrow_drop_down</span>
+                        </button>
+                        <div id="run-date-picker" class="date-picker-popover hidden">
+                            <label for="workflow-date-input">Select run date</label>
+                            <input id="workflow-date-input" type="date" min="2026-01-01" />
+                            <div class="date-picker-actions">
+                                <button id="run-selected-date-btn" class="btn btn-primary">Run for selected date</button>
+                                <button id="close-run-date-picker" class="btn btn-secondary">Cancel</button>
+                            </div>
+                            <p class="date-picker-help">Allowed range: 2026-01-01 to today.</p>
+                        </div>
+                    </div>
                 </header>
 
                 <div id="workflows-list" class="workflows-list">
@@ -98,24 +112,19 @@
             <!-- Artifacts View (Hidden by default) -->
             <div id="artifacts-view" class="view-section">
                 <header class="view-header">
-                    <h2>Execution History & Artifacts</h2>
+                    <div>
+                        <h2>Execution History & Artifacts</h2>
+                        <div class="artifacts-filter-row">
+                            <label for="artifact-filter-date">Filter by date:</label>
+                            <input id="artifact-filter-date" type="date" min="2026-01-01" />
+                            <button id="artifact-filter-apply" class="btn btn-primary">Apply</button>
+                            <button id="artifact-filter-clear" class="btn btn-secondary">Reset</button>
+                        </div>
+                    </div>
                 </header>
                 
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Trigger</th>
-                                <th>Duration</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="artifacts-tbody">
-                            <!-- Artifact rows injected via JS -->
-                        </tbody>
-                    </table>
+                <div class="artifacts-accordion" id="artifacts-list">
+                    <!-- Artifact cards injected via JS -->
                 </div>
             </div>
 

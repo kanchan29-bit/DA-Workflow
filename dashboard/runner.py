@@ -28,7 +28,7 @@ def broadcast_log(run_id, step_index, message, is_error=False):
         except queue.Full:
             pass
 
-def run_pipeline(run_id, start_step_index=0):
+def run_pipeline(run_id, start_step_index=0, date_str=None):
     def target():
         try:
             for i, step in enumerate(PIPELINE):
@@ -50,13 +50,19 @@ def run_pipeline(run_id, start_step_index=0):
                     update_run_status(run_id, "Failed", error_message=f"Script not found: {step['script']}")
                     return
 
+                env = os.environ.copy()
+                if date_str:
+                    env["RUN_DATE"] = date_str
+                    env["WORKFLOW_DATE"] = date_str
+
                 process = subprocess.Popen(
                     [sys.executable, script_path],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
                     bufsize=1,
-                    cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+                    cwd=os.path.abspath(os.path.join(os.path.dirname(__file__), "..")),
+                    env=env
                 )
                 
                 for line in iter(process.stdout.readline, ''):

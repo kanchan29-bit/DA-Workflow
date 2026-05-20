@@ -25,6 +25,7 @@ S3_PREFIX_BASE = os.getenv("S3_PREFIX_BASE", "")
 
 S3_OUTPUT_BUCKET = os.getenv("S3_OUTPUT_BUCKET", "indi-analytics-output")
 S3_OUTPUT_PREFIX = os.getenv("S3_OUTPUT_PREFIX", "DA-Output")
+S3_OUTPUT_REGION = os.getenv("S3_OUTPUT_REGION", S3_REGION)
 
 # ============================================================
 # S3 CLIENT
