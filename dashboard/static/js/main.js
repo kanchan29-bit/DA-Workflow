@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRunDate = document.getElementById('run-date-btn');
     const runDatePicker = document.getElementById('run-date-picker');
     const workflowDateInput = document.getElementById('workflow-date-input');
+    const runForceCheckbox = document.getElementById('run-force-checkbox');
     const btnRunSelectedDate = document.getElementById('run-selected-date-btn');
     const btnCloseRunDatePicker = document.getElementById('close-run-date-picker');
     const workflowsList = document.getElementById('workflows-list');
@@ -107,10 +108,14 @@ document.addEventListener('DOMContentLoaded', () => {
         btnRunWorkflow.innerHTML = '<span class="material-symbols-outlined spinning">sync</span> Starting...';
 
         try {
+            const payload = {};
+            if (dateStr) payload.date = dateStr;
+            if (runForceCheckbox && runForceCheckbox.checked) payload.force = true;
+
             const options = {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: dateStr ? JSON.stringify({ date: dateStr }) : null
+                body: Object.keys(payload).length ? JSON.stringify(payload) : null
             };
             const res = await fetch('/api/workflow/run', options);
             const data = await res.json();

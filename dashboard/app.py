@@ -40,6 +40,7 @@ def get_run(run_id):
 def start_run():
     data = request.get_json(silent=True) or {}
     requested_date = data.get('date')
+    force = bool(data.get('force', False))
 
     if requested_date:
         try:
@@ -47,7 +48,8 @@ def start_run():
         except Exception:
             return jsonify({"error": "Invalid date format. Use YYYY-MM-DD."}), 400
     else:
-        requested_date_obj = datetime.now().date()
+        # Default to processing date (yesterday) so pipeline and UI match
+        requested_date_obj = (datetime.now() - timedelta(days=1)).date()
 
     min_date = datetime(2026, 1, 1).date()
     max_date = datetime.now().date()
@@ -55,8 +57,8 @@ def start_run():
         return jsonify({"error": "Date must be between 2026-01-01 and today."}), 400
 
     date_str = requested_date_obj.strftime("%Y-%m-%d")
-    if check_run_exists_for_date(date_str):
-        return jsonify({"error": f"A run for {date_str} is already active or successful."}), 400
+    if check_run_exists_for_date(date_str) and not force:
+        return jsonify({"error": f"A run for {date_str} is already active or successful. Use force=true to override."}), 400
 
     run_id = create_run(date_str, trigger_type="manual")
     run_pipeline(run_id, date_str=date_str)
