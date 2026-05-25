@@ -8,3 +8,4 @@ pytz
 openpyxl
 boto3
 Flask
+sqlalchemy

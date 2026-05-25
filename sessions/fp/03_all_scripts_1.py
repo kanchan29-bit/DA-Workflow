@@ -5,6 +5,7 @@ import glob
 import os
 from datetime import datetime, timezone, timedelta
 import psycopg2
+from sqlalchemy import create_engine
 
 from dotenv import load_dotenv
 
@@ -117,7 +118,10 @@ print(" device_id created")
 # ==========================================================
 print("Connecting to database...")
 
-conn = psycopg2.connect(**DB_CONFIG)
+# Create SQLAlchemy engine for proper pandas/PostgreSQL integration
+engine = create_engine(
+    f"postgresql+psycopg2://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['dbname']}"
+)
 
 query = """
 SELECT DISTINCT ON (ma.meter_id)
@@ -133,8 +137,8 @@ WHERE m.meter_id >= 'IM000101'
 ORDER BY ma.meter_id, ma.assigned_at DESC;
 """
 
-mapping_df = pd.read_sql(query, conn)
-conn.close()
+mapping_df = pd.read_sql(query, engine)
+engine.dispose()
 
 print(f"Fetched {len(mapping_df)} meter-household mappings")
 

@@ -3,6 +3,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime, timedelta
 import pytz
+from sqlalchemy import create_engine
 
 import os
 from dotenv import load_dotenv
@@ -94,12 +95,14 @@ ORDER BY device_id ASC, timestamp ASC;
 # QUERY DATABASE
 # -------------------------------
 print("Connecting to database...")
-conn = psycopg2.connect(**db_config)
 
-try:
-    df = pd.read_sql_query(query, conn)
-finally:
-    conn.close()
+# Create SQLAlchemy engine for proper pandas/PostgreSQL integration
+engine = create_engine(
+    f"postgresql+psycopg2://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['dbname']}"
+)
+
+df = pd.read_sql_query(query, engine)
+engine.dispose()
 
 print(f"Retrieved {len(df)} rows from DB.")
 

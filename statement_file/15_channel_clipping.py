@@ -17,6 +17,7 @@ import numpy as np
 import psycopg2
 from datetime import datetime, timedelta
 import re
+from sqlalchemy import create_engine
 
 import os
 
@@ -66,13 +67,9 @@ raw_df['Full_Member_ID'] = raw_df['hhid'].astype(str) + raw_df['member_id'].asty
 # LOAD REGION FROM DATABASE
 # ============================================================
 
-
-conn = psycopg2.connect(
-    host=DB_HOST,
-    port=DB_PORT,
-    dbname=DB_NAME,
-    user=DB_USER,
-    password=DB_PASSWORD
+# Create SQLAlchemy engine for proper pandas/PostgreSQL integration
+engine = create_engine(
+    f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
 query = """
@@ -88,9 +85,8 @@ JOIN members m ON h.id = m.household_id
 ORDER BY h.hhid, m.member_code;
 """
 
-db_df = pd.read_sql(query, conn)
-
-conn.close()
+db_df = pd.read_sql(query, engine)
+engine.dispose()
 
 # IMPORTANT: deduplicate HHID → region mapping
 master_df = db_df[['hhid','region']].drop_duplicates()

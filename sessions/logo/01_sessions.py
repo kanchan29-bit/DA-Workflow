@@ -21,6 +21,7 @@ from dataclasses import dataclass, asdict
 from typing import Dict, List, Any, Optional, Set, Tuple
 from collections import defaultdict
 import yaml
+from sqlalchemy import create_engine
 
 # ============================================================================
 # CONFIGURATION SECTION
@@ -335,9 +336,14 @@ def fetch_events_from_postgres(start_date_str, end_date_str, db_config):
     ORDER BY hhid ASC, timestamp ASC;
     """
     print(f" Querying events from {start_dt_local} to {end_dt_local} (UNIX: {start_ts} → {end_ts})")
-    conn = psycopg2.connect(**db_config)
-    df = pd.read_sql(query, conn)
-    conn.close()
+    
+    # Create SQLAlchemy engine for proper pandas/PostgreSQL integration
+    engine = create_engine(
+        f"postgresql+psycopg2://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['dbname']}"
+    )
+    
+    df = pd.read_sql(query, engine)
+    engine.dispose()
     print(f" Fetched {len(df)} rows from events_with_assigned_hhid table")
     return df
 
