@@ -243,3 +243,38 @@ cleaning for panel file | Start: 2026-05-18 17:30:49.138161 | End: 2026-05-18 17
 channel clipping | Start: 2026-05-18 17:30:51.475994 | End: 2026-05-18 17:30:54.879322 | Duration: 0:00:03.403328 | Code: 0
 statement file generation | Start: 2026-05-18 17:30:54.880508 | End: 2026-05-18 17:30:55.475266 | Duration: 0:00:00.594758 | Code: 0
 upload outputs to S3 | Start: 2026-05-18 17:30:55.476254 | End: 2026-05-18 17:30:59.490990 | Duration: 0:00:04.014736 | Code: 0
+Logo Sessions | Start: 2026-05-25 12:09:00.430534 | End: 2026-05-25 12:10:23.293766 | Duration: 0:01:22.863232 | Code: 0
+FP files download | Start: 2026-05-25 12:10:23.305417 | End: 2026-05-25 12:10:32.528842 | Duration: 0:00:09.223425 | Code: 0
+correcting the data | Start: 2026-05-25 12:10:32.528979 | End: 2026-05-25 12:10:34.162019 | Duration: 0:00:01.633040 | Code: 0
+mapping the data | Start: 2026-05-25 12:10:34.162161 | End: 2026-05-25 12:10:58.173182 | Duration: 0:00:24.011021 | Code: 0
+merging the member declaration and viewership data for fp | Start: 2026-05-25 12:10:58.173362 | End: 2026-05-25 12:11:03.796106 | Duration: 0:00:05.622744 | Code: 0
+household sessions for fp | Start: 2026-05-25 12:11:03.796228 | End: 2026-05-25 12:12:25.046392 | Duration: 0:01:21.250164 | Code: 0
+member sessions for fp | Start: 2026-05-25 12:12:25.046520 | End: 2026-05-25 12:12:55.367565 | Duration: 0:00:30.321045 | Code: 0
+cleaning | Start: 2026-05-25 12:12:55.367700 | End: 2026-05-25 12:12:56.034680 | Duration: 0:00:00.666980 | Code: 0
+merging sessions without rejuvenation for rejuvenation history file | Start: 2026-05-25 12:12:56.034806 | End: 2026-05-25 12:12:56.416935 | Duration: 0:00:00.382129 | Code: 0
+cleaning for history file | Start: 2026-05-25 12:12:56.417074 | End: 2026-05-25 12:13:07.088429 | Duration: 0:00:10.671355 | Code: 0
+member rejuvenation | Start: 2026-05-25 12:13:07.088547 | End: 2026-05-25 12:13:20.124700 | Duration: 0:00:13.036153 | Code: 0
+now merging the rejuvenated logo and fp files | Start: 2026-05-25 12:13:20.124832 | End: 2026-05-25 12:13:20.478232 | Duration: 0:00:00.353400 | Code: 0
+cleaning for panel file | Start: 2026-05-25 12:13:20.478374 | End: 2026-05-25 12:13:20.859686 | Duration: 0:00:00.381312 | Code: 0
+3 rules | Start: 2026-05-25 12:13:20.859822 | End: 2026-05-25 12:13:22.073551 | Duration: 0:00:01.213729 | Code: 0
+channel clipping | Start: 2026-05-25 12:13:22.073676 | End: 2026-05-25 12:13:24.502681 | Duration: 0:00:02.429005 | Code: 0
+statement file generation | Start: 2026-05-25 12:13:24.502805 | End: 2026-05-25 12:13:24.848989 | Duration: 0:00:00.346184 | Code: 0
+upload outputs to S3 | Start: 2026-05-25 12:13:24.849128 | End: 2026-05-25 12:13:26.141340 | Duration: 0:00:01.292212 | Code: 0
+Mock Step 1 | Start: 2026-05-25 12:15:54.954192 | End: 2026-05-25 12:15:55.486787 | Duration: 0:00:00.532595 | Code: 0
+Logo Sessions | Start: 2026-05-25 12:17:35.062809 | End: 2026-05-25 12:19:03.128276 | Duration: 0:01:28.065467 | Code: 0
+FP files download | Start: 2026-05-25 12:19:03.133353 | End: 2026-05-25 12:19:10.843203 | Duration: 0:00:07.709850 | Code: 0
+correcting the data | Start: 2026-05-25 12:19:10.847527 | End: 2026-05-25 12:19:12.115606 | Duration: 0:00:01.268079 | Code: 0
+mapping the data | Start: 2026-05-25 12:19:12.119995 | End: 2026-05-25 12:19:27.424941 | Duration: 0:00:15.304946 | Code: 0
+merging the member declaration and viewership data for fp | Start: 2026-05-25 12:19:27.440486 | End: 2026-05-25 12:19:34.542129 | Duration: 0:00:07.101643 | Code: 0
+household sessions for fp | Start: 2026-05-25 12:19:34.547719 | End: 2026-05-25 12:21:01.217846 | Duration: 0:01:26.670127 | Code: 0
+member sessions for fp | Start: 2026-05-25 12:21:01.223870 | End: 2026-05-25 12:21:38.030490 | Duration: 0:00:36.806620 | Code: 0
+cleaning | Start: 2026-05-25 12:21:38.036293 | End: 2026-05-25 12:21:38.735205 | Duration: 0:00:00.698912 | Code: 0
+merging sessions without rejuvenation for rejuvenation history file | Start: 2026-05-25 12:21:38.741741 | End: 2026-05-25 12:21:39.160615 | Duration: 0:00:00.418874 | Code: 0
+cleaning for history file | Start: 2026-05-25 12:21:39.171434 | End: 2026-05-25 12:21:51.971279 | Duration: 0:00:12.799845 | Code: 0
+member rejuvenation | Start: 2026-05-25 12:21:51.988153 | End: 2026-05-25 12:22:07.737489 | Duration: 0:00:15.749336 | Code: 0
+now merging the rejuvenated logo and fp files | Start: 2026-05-25 12:22:07.758850 | End: 2026-05-25 12:22:08.176761 | Duration: 0:00:00.417911 | Code: 0
+cleaning for panel file | Start: 2026-05-25 12:22:08.187674 | End: 2026-05-25 12:22:08.612438 | Duration: 0:00:00.424764 | Code: 0
+3 rules | Start: 2026-05-25 12:22:08.617442 | End: 2026-05-25 12:22:10.129915 | Duration: 0:00:01.512473 | Code: 0
+channel clipping | Start: 2026-05-25 12:22:10.146365 | End: 2026-05-25 12:22:12.820396 | Duration: 0:00:02.674031 | Code: 0
+statement file generation | Start: 2026-05-25 12:22:12.837092 | End: 2026-05-25 12:22:13.205762 | Duration: 0:00:00.368670 | Code: 0
+upload outputs to S3 | Start: 2026-05-25 12:22:13.210878 | End: 2026-05-25 12:22:15.116933 | Duration: 0:00:01.906055 | Code: 0

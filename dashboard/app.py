@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from dashboard.models import init_db, get_recent_runs, get_run_details, check_run_exists_for_date, create_run, get_successful_runs, is_any_run_running, delete_run_from_db
-from dashboard.runner import run_pipeline, log_queues, stop_pipeline
+from dashboard.runner import run_pipeline, log_queues, stop_pipeline, broadcast_log
 from s3_utils import get_s3_client, S3_OUTPUT_BUCKET, S3_OUTPUT_PREFIX, S3_OUTPUT_REGION, parse_date_flex
 from botocore.exceptions import ClientError
 
@@ -105,6 +105,19 @@ def delete_run(run_id):
     
     delete_run_from_db(run_id)
     return jsonify({"status": "Deleted"}), 200
+
+@app.route('/api/workflow/broadcast', methods=['POST'])
+def broadcast_log_endpoint():
+    data = request.get_json(silent=True) or {}
+    run_id = data.get('run_id')
+    step_index = data.get('step_index')
+    message = data.get('message')
+    is_error = bool(data.get('is_error', False))
+    
+    if run_id is not None and step_index is not None and message is not None:
+        broadcast_log(run_id, step_index, message, is_error)
+        return jsonify({"status": "broadcasted"}), 200
+    return jsonify({"error": "Missing parameters"}), 400
 
 ARTIFACT_FILE_MAP = [
     {"label": "Logo Sessions", "category": "logo", "filename": "logo_sessions.csv"},

@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # ============================================================
 # CONFIG: DEFINE YOUR PIPELINE ORDER HERE
@@ -100,33 +100,74 @@ LOG_FILE = os.path.join("pipeline", "pipeline_log.txt")
 # ============================================================
 # FUNCTION: RUN SCRIPT
 # ============================================================
-def run_step(step):
-    print(f"\nRunning: {step['name']}")
+def run_step(step, step_index, run_id, broadcast):
+    broadcast(step_index, f"\nRunning: {step['name']}\n")
     start_time = datetime.now()
+
+    from dashboard.models import create_step, update_step_status, append_step_log, update_run_status
+    step_id = create_step(run_id, step_index, step["name"])
 
     # Ensure the script path is absolute or correctly relative to the project root
     script_path = os.path.abspath(step["script"])
     
     if not os.path.exists(script_path):
-        raise Exception(f"Script not found: {script_path}")
+        msg = f"Script not found: {script_path}\n"
+        append_step_log(step_id, msg)
+        broadcast(step_index, msg, is_error=True)
+        update_step_status(step_id, "Failed")
+        update_run_status(run_id, "Failed", error_message=f"Script not found: {step['script']}")
+        raise Exception(msg)
 
-    result = subprocess.run([sys.executable, script_path])
+    env = os.environ.copy()
+    run_date = os.environ.get("RUN_DATE") or os.environ.get("WORKFLOW_DATE")
+    if not run_date:
+        run_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    env["RUN_DATE"] = run_date
+    env["WORKFLOW_DATE"] = run_date
+
+    process = subprocess.Popen(
+        [sys.executable, script_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        cwd=os.path.abspath(os.path.dirname(__file__)),
+        env=env
+    )
+
+    for line in iter(process.stdout.readline, ''):
+        append_step_log(step_id, line)
+        broadcast(step_index, line)
+
+    process.stdout.close()
+    return_code = process.wait()
 
     end_time = datetime.now()
     duration = end_time - start_time
 
-    log(f"{step['name']} | Start: {start_time} | End: {end_time} | Duration: {duration} | Code: {result.returncode}")
+    log(f"{step['name']} | Start: {start_time} | End: {end_time} | Duration: {duration} | Code: {return_code}")
 
-    if result.returncode != 0:
+    if return_code != 0:
+        msg = f"Step failed with exit code {return_code}\n"
+        append_step_log(step_id, msg)
+        broadcast(step_index, msg, is_error=True)
+        update_step_status(step_id, "Failed")
+        update_run_status(run_id, "Failed", error_message=f"Step '{step['name']}' failed.")
         raise Exception(f"Script failed: {script_path}")
 
     # Optional output validation
     if step["check_file"]:
         check_path = os.path.abspath(step["check_file"])
         if not os.path.exists(check_path):
-            raise Exception(f"Expected output not found: {check_path}")
+            msg = f"Expected output not found: {check_path}\n"
+            append_step_log(step_id, msg)
+            broadcast(step_index, msg, is_error=True)
+            update_step_status(step_id, "Failed")
+            update_run_status(run_id, "Failed", error_message=f"Expected output missing for '{step['name']}'")
+            raise Exception(msg)
 
-    print(f"Completed: {step['name']}")
+    update_step_status(step_id, "Success")
+    broadcast(step_index, f"Completed: {step['name']}\n")
 
 # ============================================================
 # FUNCTION: LOGGING
@@ -145,15 +186,55 @@ def log(message):
 # MAIN EXECUTION
 # ============================================================
 if __name__ == "__main__":
-    print("\nStarting Pipeline Execution\n")
+    from dashboard.models import init_db, create_run, update_run_status, get_run_details
+    import urllib.request
+    import json
+    
+    # Adjust sys.path to find dashboard module
+    sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+    init_db()
+    
+    # Determine date
+    run_date = os.environ.get("RUN_DATE") or os.environ.get("WORKFLOW_DATE")
+    if not run_date:
+        run_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        
+    run_id = create_run(run_date, trigger_type="cron")
+    
+    def broadcast(step_index, message, is_error=False):
+        print(message, end="")
+        sys.stdout.flush()
+        
+        payload = json.dumps({
+            "run_id": run_id,
+            "step_index": step_index,
+            "message": message,
+            "is_error": is_error
+        }).encode('utf-8')
+        try:
+            req = urllib.request.Request(
+                "http://127.0.0.1:5000/api/workflow/broadcast",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=0.5) as res:
+                pass
+        except Exception:
+            pass
+
+    broadcast(-1, "\nStarting Pipeline Execution\n")
 
     try:
-        for step in PIPELINE:
-            run_step(step)
+        for i, step in enumerate(PIPELINE):
+            run_step(step, i, run_id, broadcast)
 
-        print("\nPipeline completed successfully!")
+        update_run_status(run_id, "Success")
+        broadcast(-1, "\nPipeline completed successfully!")
 
     except Exception as e:
-        print(str(e))
-        log(f"ERROR: {str(e)}")
-        print("\nPipeline stopped due to error.")
+        run_details = get_run_details(run_id)
+        if run_details and run_details.get("status") == "Running":
+            update_run_status(run_id, "Failed", error_message=str(e))
+        
+        broadcast(-1, f"\nPipeline stopped due to error: {str(e)}\n")
