@@ -694,3 +694,57 @@ body {
     transform: translateY(0);
     opacity: 1;
 }
+
+/* Stop / Delete Button Styling */
+.btn-stop {
+    background-color: var(--color-error-bg);
+    border-color: rgba(218, 54, 51, 0.4);
+    color: var(--color-error-text);
+}
+.btn-stop:hover:not(:disabled) {
+    background-color: var(--color-error);
+    color: #ffffff;
+}
+
+.btn-stop-card {
+    background-color: var(--color-error-bg);
+    border-color: rgba(218, 54, 51, 0.4);
+    color: var(--color-error-text);
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    height: 32px;
+}
+.btn-stop-card:hover:not(:disabled) {
+    background-color: var(--color-error);
+    color: white;
+}
+
+.btn-delete-card {
+    background-color: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+    padding: 6px;
+    min-width: unset;
+    height: 32px;
+    width: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.btn-delete-card:hover:not(:disabled) {
+    background-color: var(--bg-surface-hover);
+    color: var(--color-error-text);
+    border-color: rgba(218, 54, 51, 0.3);
+}
+
+.workflow-card-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.status-badge.status-stopped {
+    background-color: var(--color-error-bg);
+    color: var(--color-error-text);
+    border-color: rgba(218, 54, 51, 0.4);
+}

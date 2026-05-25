@@ -61,7 +61,7 @@ def update_run_status(run_id, status, error_message=None):
     conn = get_db()
     cursor = conn.cursor()
     
-    if status in ["Success", "Failed"]:
+    if status in ["Success", "Failed", "Stopped"]:
         cursor.execute("SELECT started_at FROM workflow_runs WHERE id=?", (run_id,))
         started_at_str = cursor.fetchone()["started_at"]
         started_at = datetime.fromisoformat(started_at_str) if started_at_str else datetime.now()
@@ -106,7 +106,7 @@ def update_step_status(step_id, status, log_output=None):
     if log_output is not None:
         current_log += log_output
         
-    if status in ["Success", "Failed", "Skipped"]:
+    if status in ["Success", "Failed", "Skipped", "Stopped"]:
         started_at = datetime.fromisoformat(started_at_str) if started_at_str else datetime.now()
         finished_at = datetime.now()
         duration = (finished_at - started_at).total_seconds()
@@ -171,3 +171,19 @@ def get_successful_runs():
     runs = [dict(row) for row in cursor.fetchall()]
     conn.close()
     return runs
+
+def is_any_run_running():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM workflow_runs WHERE status='Running'")
+    row = cursor.fetchone()
+    conn.close()
+    return row is not None
+
+def delete_run_from_db(run_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM workflow_steps WHERE run_id=?", (run_id,))
+    cursor.execute("DELETE FROM workflow_runs WHERE id=?", (run_id,))
+    conn.commit()
+    conn.close()

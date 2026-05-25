@@ -5,4 +5,5 @@ __pycache__/
 *.zip
 *.txt
 *.db
+dashboard/data/workflow.db
 pipeline_log.txt

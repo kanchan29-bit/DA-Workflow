@@ -28,10 +28,32 @@ def broadcast_log(run_id, step_index, message, is_error=False):
         except queue.Full:
             pass
 
+active_runs = {}
+
+def stop_pipeline(run_id):
+    if run_id in active_runs:
+        active_runs[run_id]['stopped'] = True
+        proc = active_runs[run_id].get('process')
+        if proc:
+            try:
+                proc.terminate()
+            except Exception:
+                pass
+        return True
+    return False
+
 def run_pipeline(run_id, start_step_index=0, date_str=None):
+    active_runs[run_id] = {'process': None, 'stopped': False}
+    
     def target():
         try:
             for i, step in enumerate(PIPELINE):
+                # Check if run was stopped
+                if active_runs.get(run_id, {}).get('stopped'):
+                    update_run_status(run_id, "Stopped", error_message="Workflow was stopped by user.")
+                    broadcast_log(run_id, -1, "Workflow stopped by user.\n")
+                    return
+
                 # Skip steps before start_step_index
                 if i < start_step_index:
                     step_id = create_step(run_id, i, step["name"])
@@ -40,6 +62,13 @@ def run_pipeline(run_id, start_step_index=0, date_str=None):
                 
                 step_id = create_step(run_id, i, step["name"])
                 broadcast_log(run_id, i, f"Starting step: {step['name']}\n")
+                
+                # Check stopped again
+                if active_runs.get(run_id, {}).get('stopped'):
+                    update_step_status(step_id, "Stopped", log_output="Step stopped by user.\n")
+                    update_run_status(run_id, "Stopped", error_message="Workflow was stopped by user.")
+                    broadcast_log(run_id, -1, "Workflow stopped by user.\n")
+                    return
                 
                 script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", step["script"]))
                 if not os.path.exists(script_path):
@@ -65,12 +94,27 @@ def run_pipeline(run_id, start_step_index=0, date_str=None):
                     env=env
                 )
                 
+                active_runs[run_id]['process'] = process
+
+                # Read output
                 for line in iter(process.stdout.readline, ''):
                     append_step_log(step_id, line)
                     broadcast_log(run_id, i, line)
+                    if active_runs.get(run_id, {}).get('stopped'):
+                        try:
+                            process.terminate()
+                        except Exception:
+                            pass
                 
                 process.stdout.close()
                 return_code = process.wait()
+                
+                # Check if stopped during execution
+                if active_runs.get(run_id, {}).get('stopped'):
+                    update_step_status(step_id, "Stopped", log_output="Step stopped by user.\n")
+                    update_run_status(run_id, "Stopped", error_message="Workflow was stopped by user.")
+                    broadcast_log(run_id, -1, "Workflow stopped by user.\n")
+                    return
                 
                 if return_code != 0:
                     msg = f"Step failed with exit code {return_code}\n"
@@ -98,9 +142,15 @@ def run_pipeline(run_id, start_step_index=0, date_str=None):
             broadcast_log(run_id, -1, "Workflow completed successfully.\n")
             
         except Exception as e:
-            msg = f"Workflow exception: {str(e)}\n"
-            broadcast_log(run_id, -1, msg, is_error=True)
-            update_run_status(run_id, "Failed", error_message=str(e))
+            if active_runs.get(run_id, {}).get('stopped'):
+                update_run_status(run_id, "Stopped", error_message="Workflow was stopped by user.")
+                broadcast_log(run_id, -1, "Workflow stopped by user.\n")
+            else:
+                msg = f"Workflow exception: {str(e)}\n"
+                broadcast_log(run_id, -1, msg, is_error=True)
+                update_run_status(run_id, "Failed", error_message=str(e))
+        finally:
+            active_runs.pop(run_id, None)
 
     thread = threading.Thread(target=target)
     thread.daemon = True

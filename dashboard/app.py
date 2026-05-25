@@ -8,8 +8,8 @@ from datetime import datetime, timedelta
 import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from dashboard.models import init_db, get_recent_runs, get_run_details, check_run_exists_for_date, create_run, get_successful_runs
-from dashboard.runner import run_pipeline, log_queues
+from dashboard.models import init_db, get_recent_runs, get_run_details, check_run_exists_for_date, create_run, get_successful_runs, is_any_run_running, delete_run_from_db
+from dashboard.runner import run_pipeline, log_queues, stop_pipeline
 from s3_utils import get_s3_client, S3_OUTPUT_BUCKET, S3_OUTPUT_PREFIX, S3_OUTPUT_REGION, parse_date_flex
 from botocore.exceptions import ClientError
 
@@ -38,6 +38,9 @@ def get_run(run_id):
 
 @app.route('/api/workflow/run', methods=['POST'])
 def start_run():
+    if is_any_run_running():
+        return jsonify({"error": "Another workflow run is currently active. You cannot run multiple workflows at the same time."}), 400
+
     data = request.get_json(silent=True) or {}
     requested_date = data.get('date')
     force = bool(data.get('force', False))
@@ -66,6 +69,9 @@ def start_run():
 
 @app.route('/api/workflow/runs/<int:run_id>/retry', methods=['POST'])
 def retry_run(run_id):
+    if is_any_run_running():
+        return jsonify({"error": "Another workflow run is currently active. You cannot run multiple workflows at the same time."}), 400
+
     run = get_run_details(run_id)
     if not run:
         return jsonify({"error": "Run not found"}), 404
@@ -81,6 +87,24 @@ def retry_run(run_id):
     new_run_id = create_run(date_str, trigger_type=f"retry_{run_id}")
     run_pipeline(new_run_id, start_step_index=start_step_index, date_str=date_str)
     return jsonify({"run_id": new_run_id, "status": "Retried"}), 201
+
+@app.route('/api/workflow/runs/<int:run_id>/stop', methods=['POST'])
+def stop_run(run_id):
+    success = stop_pipeline(run_id)
+    if not success:
+        return jsonify({"error": "Run not found or not active"}), 404
+    return jsonify({"status": "Stopping"}), 200
+
+@app.route('/api/workflow/runs/<int:run_id>', methods=['DELETE'])
+def delete_run(run_id):
+    run = get_run_details(run_id)
+    if not run:
+        return jsonify({"error": "Run not found"}), 404
+    if run.get("status") == "Running":
+        return jsonify({"error": "Cannot delete a running workflow. Please stop it first."}), 400
+    
+    delete_run_from_db(run_id)
+    return jsonify({"status": "Deleted"}), 200
 
 ARTIFACT_FILE_MAP = [
     {"label": "Logo Sessions", "category": "logo", "filename": "logo_sessions.csv"},

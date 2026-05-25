@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const workflowsList = document.getElementById('workflows-list');
     const btnBackToWorkflows = document.getElementById('back-to-workflows');
     const btnRetryWorkflow = document.getElementById('retry-workflow-btn');
+    const btnStopWorkflow = document.getElementById('stop-workflow-btn');
     const artifactsFilterDate = document.getElementById('artifact-filter-date');
     const artifactFilterApply = document.getElementById('artifact-filter-apply');
     const artifactFilterClear = document.getElementById('artifact-filter-clear');
@@ -59,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'Failed': return 'cancel';
             case 'Running': return 'sync';
             case 'Skipped': return 'do_not_disturb_on';
+            case 'Stopped': return 'block';
             default: return 'pending';
         }
     };
@@ -69,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'Failed': return 'status-failed';
             case 'Running': return 'status-running';
             case 'Skipped': return 'status-skipped';
+            case 'Stopped': return 'status-stopped';
             default: return 'status-pending';
         }
     };
@@ -162,12 +165,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnBackToWorkflows.addEventListener('click', () => switchView('workflows-view'));
 
+    const updateRunButtonsState = (isAnyRunning) => {
+        btnRunWorkflow.disabled = isAnyRunning;
+        btnRunDate.disabled = isAnyRunning;
+        if (isAnyRunning) {
+            btnRunWorkflow.title = 'A workflow is currently running';
+            btnRunDate.title = 'A workflow is currently running';
+        } else {
+            btnRunWorkflow.removeAttribute('title');
+            btnRunDate.removeAttribute('title');
+        }
+    };
+
     // --- API Interactions ---
     const loadWorkflows = async () => {
         try {
             const res = await fetch('/api/workflow/runs');
             const data = await res.json();
             renderWorkflows(data);
+            
+            const isAnyRunning = data.some(run => run.status === 'Running');
+            updateRunButtonsState(isAnyRunning);
         } catch (error) {
             showToast('Failed to load workflows.');
             workflowsList.innerHTML = '<div class="loading-state"><p>Error loading workflows.</p></div>';
@@ -242,6 +260,11 @@ document.addEventListener('DOMContentLoaded', () => {
         renderArtifacts(artifactRuns);
     });
     btnRetryWorkflow.addEventListener('click', retryRun);
+    btnStopWorkflow.addEventListener('click', () => {
+        if (currentRunId) {
+            window.stopWorkflow(currentRunId);
+        }
+    });
 
     setDateInputLimits();
 
@@ -270,7 +293,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
                 </div>
-                <div>
+                <div class="workflow-card-right">
+                    ${run.status === 'Running' ? `
+                        <button class="btn btn-stop-card" onclick="event.stopPropagation(); stopWorkflow(${run.id})">
+                            <span class="material-symbols-outlined">stop</span> Stop
+                        </button>
+                    ` : `
+                        <button class="btn btn-delete-card" onclick="event.stopPropagation(); deleteWorkflow(${run.id})">
+                            <span class="material-symbols-outlined">delete</span>
+                        </button>
+                    `}
                     <span class="status-badge ${getStatusClass(run.status)}">${run.status}</span>
                 </div>
             </div>
@@ -325,6 +357,57 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     };
 
+    window.stopWorkflow = async (runId) => {
+        if (!confirm('Are you sure you want to stop this running workflow?')) return;
+        
+        try {
+            const btn = document.querySelector(`.workflow-card[onclick*="openRunDetails(${runId})"] .btn-stop-card`);
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="material-symbols-outlined spinning">sync</span> Stopping...';
+            }
+            if (btnStopWorkflow) {
+                btnStopWorkflow.disabled = true;
+                btnStopWorkflow.innerHTML = '<span class="material-symbols-outlined spinning">sync</span> Stopping...';
+            }
+
+            const res = await fetch(`/api/workflow/runs/${runId}/stop`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to stop workflow');
+
+            showToast('Stopping workflow...');
+            loadWorkflows();
+            if (currentRunId === runId) {
+                loadRunDetails(runId);
+            }
+        } catch (error) {
+            showToast(error.message);
+        } finally {
+            if (btnStopWorkflow) {
+                btnStopWorkflow.disabled = false;
+                btnStopWorkflow.innerHTML = '<span class="material-symbols-outlined">stop</span> Stop Workflow';
+            }
+        }
+    };
+
+    window.deleteWorkflow = async (runId) => {
+        if (!confirm('Are you sure you want to permanently delete this workflow run and its logs?')) return;
+
+        try {
+            const res = await fetch(`/api/workflow/runs/${runId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to delete workflow');
+
+            showToast('Workflow run deleted.');
+            loadWorkflows();
+            if (currentRunId === runId) {
+                switchView('workflows-view');
+            }
+        } catch (error) {
+            showToast(error.message);
+        }
+    };
+
     window.openRunDetails = (runId) => {
         currentRunId = runId;
         logsContainer.innerHTML = '';
@@ -343,6 +426,12 @@ document.addEventListener('DOMContentLoaded', () => {
             btnRetryWorkflow.classList.remove('hidden');
         } else {
             btnRetryWorkflow.classList.add('hidden');
+        }
+
+        if (run.status === 'Running') {
+            btnStopWorkflow.classList.remove('hidden');
+        } else {
+            btnStopWorkflow.classList.add('hidden');
         }
 
         if (!run.steps || run.steps.length === 0) {
@@ -416,11 +505,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Periodically reload run details to get status updates
                 // We do it loosely, e.g. every few events or specifically when status changes.
                 // For a smooth UI, we'll just reload details on every specific step complete.
-                if (event.message && event.message.includes("Completed step")) {
+                if (event.message && (
+                    event.message.includes("Completed step") ||
+                    event.message.toLowerCase().includes("failed") ||
+                    event.message.toLowerCase().includes("stopped") ||
+                    event.message.toLowerCase().includes("completed successfully")
+                )) {
                     loadRunDetails(currentRunId);
-                }
-                if (event.message && event.message.includes("failed")) {
-                    loadRunDetails(currentRunId);
+                    loadWorkflows();
                 }
             }
         };
