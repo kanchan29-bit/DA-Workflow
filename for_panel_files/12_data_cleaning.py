@@ -18,7 +18,7 @@ INPUT_PATTERN = "*.csv"  # Get all CSV files, we'll filter by date
 OUTPUT_DIR = os.path.join(BASE_DIR, "for_panel_files", "for_panel")
 
 # Channel IDs to remove
-CHANNELS_TO_REMOVE = {6, 9, 10, 13, 15, 14}
+CHANNELS_TO_REMOVE = { 9, 99}
 
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -82,7 +82,7 @@ def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
     Shift values from s3_date column to date column, and from chname column to channel column.
     This function is called BEFORE any other processing.
     """
-    print("    Shifting column values (s3_date → date, chname → channel)...")
+    print("    Shifting column values (s3_date -> date, chname -> channel)...")
     
     # Shift s3_date to date column
     if 's3_date' in df.columns:
@@ -138,7 +138,7 @@ CHANNEL_MAP = {
     "Nor Hayastan": 13, "NorHayastan": 13,
     "First News Channel": 1,
     "Public TV": 2, "PublicTV": 2,
-    "Fast Sports": 6,
+    "Fast Sports": 6, "FastSports": 6,
     "Kentron Tv HD": 5, "KentronTVHD": 5,
     "Free News": 14, "FreeNews": 14,
     "Armenia TV": 4, "ArmeniaTV": 4,

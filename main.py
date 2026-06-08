@@ -47,50 +47,46 @@ PIPELINE = [
         "name": "cleaning",
         "script": os.path.join("sessions", "fp", "08_data_cleaning_6.py"),
         "check_file": None
-    },
-    {
-        "name": "merging sessions without rejuvenation for rejuvenation history file",
-        "script": os.path.join("sessions", "merging", "09_merging_1.py"),
-        "check_file": None
-    },
+    }
+    ,
     {
         "name": "cleaning for history file",
-        "script": os.path.join("sessions", "merging", "10_data_cleaning.py"),
+        "script": os.path.join("sessions", "merging", "09_member_rejuvenation_FP.py"),
         "check_file": None
     },
     {
         "name": "member rejuvenation",
-        "script": os.path.join("sessions", "merging", "11_member_rejuvenation.py"),
+        "script": os.path.join("sessions", "merging", "10_member_rejuvenation_logo.py"),
         "check_file": None
     },
     {
         "name": "now merging the rejuvenated logo and fp files",
-        "script": os.path.join("sessions", "merging", "12_merging_after_rejuvenation.py"),
+        "script": os.path.join("sessions", "merging", "11_merging_after_rejuvenation.py"),
         "check_file": None
     },
     {
         "name": "cleaning for panel file",
-        "script": os.path.join("for_panel_files", "13_data_cleaning.py"),
+        "script": os.path.join("for_panel_files", "12_data_cleaning.py"),
         "check_file": None
     },
     {
         "name": "3 rules",
-        "script": os.path.join("statement_file", "14_qualifier_rules.py"),
+        "script": os.path.join("statement_file", "13_qualifier_rules.py"),
         "check_file": None
     },
     {
         "name": "channel clipping",
-        "script": os.path.join("statement_file", "15_channel_clipping.py"),
+        "script": os.path.join("statement_file", "14_channel_clipping.py"),
         "check_file": None
     },
     {
         "name": "statement file generation",
-        "script": os.path.join("statement_file", "16_final_data_cleaning.py"),
+        "script": os.path.join("statement_file", "15_final_data_cleaning.py"),
         "check_file": None
     },
     {
         "name": "upload outputs to S3",
-        "script": os.path.join("pipeline", "17_upload_to_s3.py"),
+        "script": os.path.join("pipeline", "16_upload_to_s3.py"),
         "check_file": None
     }
 ]

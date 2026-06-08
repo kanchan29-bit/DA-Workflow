@@ -30,7 +30,7 @@ CHANNEL_MAP = {
     "Nor Hayastan": 13, "NorHayastan": 13,
     "First News Channel": 1,
     "Public TV": 2, "PublicTV": 2,
-    "Fast Sports": 6,
+    "Fast Sports": 6, "FastSports": 6,
     "Kentron Tv HD": 5, "KentronTVHD": 5,
     "Free News": 14, "FreeNews": 14,
     "Armenia TV": 4, "ArmeniaTV": 4,
@@ -85,7 +85,7 @@ print("Channel mapping completed.")
 # ===============================
 initial_rows = len(df)
 
-df = df[~df["channelid"].isin([10, 13, 14,15, 99])]
+df = df[~df["channelid"].isin([9, 99])]
 
 print(f"Rows removed: {initial_rows - len(df)}")
 
