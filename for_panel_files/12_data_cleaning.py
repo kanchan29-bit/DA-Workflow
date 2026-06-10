@@ -82,7 +82,7 @@ def shift_columns(df: pd.DataFrame) -> pd.DataFrame:
     Shift values from s3_date column to date column, and from chname column to channel column.
     This function is called BEFORE any other processing.
     """
-    print("    Shifting column values (s3_date -> date, chname -> channel)...")
+    print("    Shifting column values (s3_date  date, chname  channel)...")
     
     # Shift s3_date to date column
     if 's3_date' in df.columns:
@@ -264,7 +264,7 @@ def process_file(file_path: str):
     df.to_csv(output_file, index=False)
 
     print(
-        f" Rows: {original_rows} → {cleaned_rows} | "
+        f" Rows: {original_rows}  {cleaned_rows} | "
         f" Removed: {removed_count} | "
         f"Saved: {output_file}"
     )
