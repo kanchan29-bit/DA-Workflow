@@ -551,6 +551,33 @@ channel_summary['Difference'] = (
 # Replace duration_seconds with final trimmed duration
 split_df['duration_seconds'] = split_df['Final_Duration']
 
+# ===============================
+# REMOVE SESSIONS LESS THAN 5 SEC
+# ===============================
+before_rows = len(split_df)
+
+split_df = split_df[
+    split_df['duration_seconds'].fillna(0) >= 5
+].copy()
+
+removed_rows = before_rows - len(split_df)
+
+print(f"Rows removed (duration_seconds < 5 sec): {removed_rows:,}")
+
+# ===============================
+# SAFETY CHECK
+# ===============================
+remaining_bad_rows = (
+    split_df['duration_seconds'].fillna(0) < 5
+).sum()
+
+print(f"Remaining rows with duration_seconds < 5: {remaining_bad_rows}")
+
+if remaining_bad_rows > 0:
+    print(" WARNING: Some rows with duration_seconds < 5 still exist!")
+else:
+    print(" Verification passed. No rows with duration_seconds < 5 remain.")
+
 # Keep only required columns in correct order
 final_output_df = split_df[
     [
@@ -563,8 +590,7 @@ final_output_df = split_df[
         'end_time',
         'duration',
         'duration_seconds',
-        'type',
-        'channelid'
+        'type'
     ]
 ].copy()
 
@@ -577,4 +603,6 @@ OUTPUT_FILE = RAW_FILE_PATH.replace(".csv", "_PROCESSED.csv")
 final_output_df.to_csv(OUTPUT_FILE, index=False)
 
 print(" PROCESSED CSV GENERATED:", OUTPUT_FILE)
+print(f" Final output rows: {len(final_output_df):,}")
+
 
