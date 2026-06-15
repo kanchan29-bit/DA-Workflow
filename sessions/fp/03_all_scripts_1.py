@@ -35,7 +35,8 @@ COLUMNS_TO_KEEP = [
     "s3_date",
     "timestamp",
     "device_id",
-    "hhid"
+    "hhid",
+    "source_type"
 ]
 
 # Yerevan timezone (UTC +04:00)
@@ -171,12 +172,79 @@ final_df = final_df[COLUMNS_TO_KEEP].copy()
 # ==========================================================
 final_df["type"] = 42
 
-if "source_type" in combined_df.columns:
-    before_count = len(final_df)
-    final_df = final_df[combined_df["source_type"] != "UNKNOWN_MATCHED"]
-    after_count = len(final_df)
 
-    print(f"Removed {before_count - after_count} UNKNOWN_MATCHED rows")
+
+# ==========================================================
+# STEP 7.1: REMOVE UNKNOWN_MATCHED
+# ==========================================================
+if "source_type" in final_df.columns:
+
+    before_rows = len(final_df)
+
+    # Normalize source_type before filtering
+    final_df["source_type"] = (
+        final_df["source_type"]
+        .astype(str)
+        .str.strip()
+        .str.upper()
+    )
+
+    unknown_df = final_df[
+        final_df["source_type"] == "UNKNOWN_MATCHED"
+    ]
+
+    removed_rows = len(unknown_df)
+    removed_devices = unknown_df["device_id"].nunique()
+
+    final_df = final_df[
+        final_df["source_type"] != "UNKNOWN_MATCHED"
+    ]
+
+    after_rows = len(final_df)
+
+    print("\n===================================")
+    print("UNKNOWN_MATCHED FILTER")
+    print("===================================")
+    print(f"Rows removed                : {removed_rows}")
+    print(f"Unique device_ids removed   : {removed_devices}")
+    print(f"Rows remaining              : {after_rows}")
+
+    if removed_rows == 0:
+        print("No UNKNOWN_MATCHED rows found.")
+# ==========================================================
+# STEP 7.5: HHID MAPPING SUMMARY ONLY
+# ==========================================================
+missing_hhid_df = final_df[
+    final_df["hhid"].isna() |
+    (final_df["hhid"].astype(str).str.strip() == "")
+]
+
+print("\n===================================")
+print("HHID MAPPING SUMMARY")
+print("===================================")
+print(f"Rows without HHID          : {len(missing_hhid_df)}")
+print(f"Unique device_ids unmapped : {missing_hhid_df['device_id'].nunique()}")
+
+if len(missing_hhid_df) > 0:
+    print("\nUnmapped Device IDs:")
+    for device in sorted(
+        missing_hhid_df["device_id"].dropna().astype(str).unique()
+    ):
+        print(device)
+
+print("\nNo rows removed. Keeping all records.")
+final_df.to_csv(FINAL_OUTPUT_FILE, index=False)
+
+# ==========================================================
+# FINAL SUMMARY
+# ==========================================================
+print("\n===================================")
+print("FINAL SUMMARY")
+print("===================================")
+print(f"Final rows                 : {len(final_df)}")
+print(f"Final unique device_ids    : {final_df['device_id'].nunique()}")
+print(f"Final unique HHIDs         : {final_df['hhid'].nunique()}")
+print("===================================")
 
 # ==========================================================
 # STEP 8: SAVE OUTPUT

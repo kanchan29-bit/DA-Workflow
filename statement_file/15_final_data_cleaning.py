@@ -90,6 +90,16 @@ df = df[~df["channelid"].isin([9, 99])]
 print(f"Rows removed: {initial_rows - len(df)}")
 
 # ===============================
+# COMBINE NON-REPORTED CHANNELS
+# ===============================
+NON_REPORTED_IDS = [6, 10, 13, 14, 15]
+
+df.loc[df["channelid"].isin(NON_REPORTED_IDS), "channelid"] = 98
+df.loc[df["channelid"] == 98, "channel"] = "Non Reported"
+
+print("Non-reported channels combined into channelid 98.")
+
+# ===============================
 # REMOVE SHORT SESSIONS (ZERO SECONDS)
 # ===============================
 if "duration_seconds" in df.columns:

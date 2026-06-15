@@ -19,7 +19,7 @@ df2 = pd.read_csv(file2_csv)
 # ===============================
 # CLEAN FILE 1
 # ===============================
-df1 = df1.drop(columns=[c for c in ["id", "createdAt"] if c in df1.columns])
+df1 = df1.drop(columns=[c for c in [ "createdAt"] if c in df1.columns])
 
 # ===============================
 # ADD SOURCE PRIORITY
@@ -77,6 +77,40 @@ df["start_time"] = pd.to_datetime(df["timestamp"], unit='s', utc=True) \
 # CLEAN UP
 # ===============================
 df = df.drop(columns=["_source_priority"])
+
+# ===============================
+# REMOVE DUPLICATE TYPE = 3 (KEEP HIGHEST ID)
+# ===============================
+
+# Ensure id is numeric
+df["id"] = pd.to_numeric(df["id"], errors="coerce")
+
+# Split type 3 and others
+df_type3 = df[df["type"] == 3].copy()
+df_other = df[df["type"] != 3].copy()
+
+# Sort so highest id comes first
+df_type3 = df_type3.sort_values(
+    by=["hhid", "timestamp", "id"],
+    ascending=[True, True, False]
+)
+
+# Drop duplicates → keep highest id
+df_type3 = df_type3.drop_duplicates(
+    subset=["hhid", "timestamp"],
+    keep="first"
+)
+
+# Combine back
+df = pd.concat([df_other, df_type3], ignore_index=True)
+
+# Optional: re-sort final output
+df = df.sort_values(
+    by=["device_id", "timestamp"],
+    ascending=[True, True]
+)
+
+df = df.drop(columns=[c for c in [ "id"] if c in df.columns])
 
 # ===============================
 # WRITE OUTPUT
