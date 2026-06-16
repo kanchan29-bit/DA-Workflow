@@ -134,6 +134,8 @@ final_df = final_df[
     ]
 ]
 
+print("Rows written to fp_sessions:", len(final_df))
+
 final_df.to_csv(OUTPUT_CSV, index=False)
 
 print(f" Member-grouped sessions written to {OUTPUT_CSV}")

@@ -40,6 +40,12 @@ def parse_members(details):
 channel_df = pd.read_csv(CHANNEL_CSV)
 member_df  = pd.read_csv(MEMBER_CSV)
 
+print(f"CHANNEL rows: {len(channel_df)}")
+print(f"MEMBER rows: {len(member_df)}")
+
+print(f"CHANNEL HHIDs: {channel_df['hhid'].nunique()}")
+print(f"MEMBER HHIDs: {member_df['hhid'].nunique()}")
+
 # Normalize time
 member_df["decl_dt"] = member_df["start_time"].apply(to_dt)
 
@@ -151,6 +157,8 @@ final_df = pd.DataFrame(final_rows)
 base_cols = list(channel_df.columns)
 extra_cols = [c for c in final_df.columns if c not in base_cols]
 final_df = final_df[base_cols + extra_cols]
+
+print(f"FINAL channel-member rows: {len(final_df)}")
 
 final_df.to_csv(OUTPUT_CSV, index=False)
 
