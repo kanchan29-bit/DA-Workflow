@@ -95,14 +95,19 @@ for _, row in df.iterrows():
     )
 
     # merge if same member + channel and continuous
-    if (
-        key == prev_key and
-        abs((row["start_dt"] - current["end_dt"]).total_seconds()) <= 1
-    ):
+    gap = abs((row["start_dt"] - current["end_dt"]).total_seconds())
+
+    if key == prev_key and gap <= 1:
         current["end_dt"] = row["end_dt"]
         current["duration_seconds"] += row["duration_seconds"]
-
     else:
+        if key == prev_key:
+            print(
+                f"NOT MERGED | HHID={row['hhid']} "
+                f"member={row['member_id']} "
+                f"channel={row['chname']} "
+                f"gap={gap}"
+            )
         grouped_rows.append(current)
         current = row.copy()
 
