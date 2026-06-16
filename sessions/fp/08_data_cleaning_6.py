@@ -51,6 +51,9 @@ def make_start_secs(t):
 # ===============================
 df = pd.read_csv(INPUT_CSV)
 
+print("08 INPUT rows:", len(df))
+print("08 INPUT HHIDs:", df["hhid"].nunique())
+
 # normalize times
 df["start_dt"] = df["start_time"].apply(to_dt)
 df["end_dt"]   = df["end_time"].apply(to_dt)
@@ -67,6 +70,7 @@ df = df.sort_values(
 # ===============================
 # GROUP CONTIGUOUS SESSIONS
 # ===============================
+print("08 INPUT rows:", len(df))
 grouped_rows = []
 current = None
 
@@ -109,6 +113,8 @@ if current is not None:
 # ===============================
 # FINALIZE OUTPUT
 # ===============================
+print("GROUPED rows:", len(grouped_rows))
+print("ROWS MERGED:", len(df) - len(grouped_rows))
 final_df = pd.DataFrame(grouped_rows)
 
 final_df["start_time"] = final_df["start_dt"].apply(to_str)
@@ -136,6 +142,7 @@ final_df = final_df[
 
 print("Rows written to fp_sessions:", len(final_df))
 
+print("08 OUTPUT rows:", len(final_df))
 final_df.to_csv(OUTPUT_CSV, index=False)
 
 print(f" Member-grouped sessions written to {OUTPUT_CSV}")
