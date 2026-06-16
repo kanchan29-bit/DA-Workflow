@@ -84,12 +84,12 @@ PIPELINE = [
         "script": os.path.join("statement_file", "15_final_data_cleaning.py"),
         "check_file": None
     }
-    # },
-    # {
-    #     "name": "upload outputs to S3",
-    #     "script": os.path.join("pipeline", "16_upload_to_s3.py"),
-    #     "check_file": None
-    # }
+    ,
+    {
+        "name": "upload outputs to S3",
+        "script": os.path.join("pipeline", "16_upload_to_s3.py"),
+        "check_file": None
+    }
 ]
 
 LOG_FILE = os.path.join("pipeline", "pipeline_log.txt")
