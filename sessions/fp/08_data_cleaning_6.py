@@ -97,7 +97,7 @@ for _, row in df.iterrows():
     # merge if same member + channel and continuous
     gap = abs((row["start_dt"] - current["end_dt"]).total_seconds())
 
-    if key == prev_key and gap <= 1:
+    if key == prev_key and gap <= 10:
         current["end_dt"] = row["end_dt"]
         current["duration_seconds"] += row["duration_seconds"]
     else:
