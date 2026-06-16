@@ -93,28 +93,28 @@ UPLOADS = [
 
     # --- For Panel: Cleaned file ---
     {
-        "local": os.path.join("for_panel_files", "for_panel", f"{date_dmy}_cleaned.csv"),
+        "local": os.path.join("for_panel_files", "for_panel", f"{date_ymd}_cleaned.csv"),
         "category": "for_panel",
         "filename": "cleaned.csv",
     },
 
     # --- Qualifier: Ruled file ---
     {
-        "local": os.path.join("statement_file", "qualifier_output", f"{date_dmy}_ruled.csv"),
+        "local": os.path.join("statement_file", "qualifier_output", f"{date_ymd}_ruled.csv"),
         "category": "qualifier",
         "filename": "ruled.csv",
     },
 
     # --- Qualifier: Ruled + Processed file ---
     {
-        "local": os.path.join("statement_file", "qualifier_output", f"{date_dmy}_ruled_PROCESSED.csv"),
+        "local": os.path.join("statement_file", "qualifier_output", f"{date_ymd}_ruled_PROCESSED.csv"),
         "category": "qualifier",
         "filename": "ruled_PROCESSED.csv",
     },
 
     # --- Statement: Final statement file ---
     {
-        "local": os.path.join("statement_file", "statement", f"{date_dmy}_statement.csv"),
+        "local": os.path.join("statement_file", "statement", f"{date_ymd}_statement.csv"),
         "category": "statement",
         "filename": "statement.csv",
     },
@@ -194,7 +194,7 @@ if os.path.exists(fp_input_dir):
 print(f"  Deleted {deleted_inputs} FP input file(s)")
 
 # ============================================================
-# CLEANUP: DELETE FP INTERMEDIATE FILES
+# CLEANUP: DELETE FP INTERMEDIATE FILES 
 # ============================================================
 print("\nCleaning up FP intermediate files...")
 fp_output_dir = os.path.join(BASE_DIR, "sessions", "fp", "output")
