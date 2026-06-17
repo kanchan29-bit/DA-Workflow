@@ -85,7 +85,7 @@ device_ids_str = ",".join([f"'{d}'" for d in device_list])
 query = f"""
 SELECT *
 FROM events
-WHERE type IN ('42','23','3','4')
+WHERE type IN ('23','3','4')
   AND timestamp BETWEEN {start_ts} AND {end_ts}
   AND device_id IN ({device_ids_str})
 ORDER BY device_id ASC, timestamp ASC;
