@@ -196,21 +196,21 @@ print(f"  Deleted {deleted_inputs} FP input file(s)")
 # ============================================================
 # CLEANUP: DELETE FP INTERMEDIATE FILES 
 # ============================================================
-print("\nCleaning up FP intermediate files...")
-fp_output_dir = os.path.join(BASE_DIR, "sessions", "fp", "output")
-fp_download_dir = os.path.join(BASE_DIR, "sessions", "fp", "downloads")
-deleted_intermediate = 0
+# print("\nCleaning up FP intermediate files...")
+# fp_output_dir = os.path.join(BASE_DIR, "sessions", "fp", "output")
+# fp_download_dir = os.path.join(BASE_DIR, "sessions", "fp", "downloads")
+# deleted_intermediate = 0
 
-for cleanup_dir in [fp_output_dir, fp_download_dir]:
-    if os.path.exists(cleanup_dir):
-        for f in glob.glob(os.path.join(cleanup_dir, "*.csv")):
-            try:
-                os.remove(f)
-                deleted_intermediate += 1
-            except Exception as e:
-                print(f"  Warning: Could not delete {f}: {e}")
+# for cleanup_dir in [fp_output_dir, fp_download_dir]:
+#     if os.path.exists(cleanup_dir):
+#         for f in glob.glob(os.path.join(cleanup_dir, "*.csv")):
+#             try:
+#                 os.remove(f)
+#                 deleted_intermediate += 1
+#             except Exception as e:
+#                 print(f"  Warning: Could not delete {f}: {e}")
 
-print(f"  Deleted {deleted_intermediate} intermediate file(s)")
+# print(f"  Deleted {deleted_intermediate} intermediate file(s)")
 
 # ============================================================
 # CLEANUP: DELETE REJUVENATION AUDIT FILES
