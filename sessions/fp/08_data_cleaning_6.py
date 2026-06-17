@@ -98,6 +98,17 @@ for _, row in df.iterrows():
     gap = abs((row["start_dt"] - current["end_dt"]).total_seconds())
 
     if key == prev_key and gap <= 1:
+        
+        print(
+            f"MERGED | HHID={row['hhid']} "
+            f"member={row['member_id']} "
+            f"channel={row['chname']} "
+            f"gap={gap} "
+            f"{current['start_time']}->{current['end_time']} "
+            f"WITH "
+            f"{row['start_time']}->{row['end_time']}"
+        )
+
         current["end_dt"] = row["end_dt"]
         current["duration_seconds"] += row["duration_seconds"]
     else:
@@ -108,6 +119,7 @@ for _, row in df.iterrows():
                 f"channel={row['chname']} "
                 f"gap={gap}"
             )
+
         grouped_rows.append(current)
         current = row.copy()
 
