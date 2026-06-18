@@ -51,9 +51,6 @@ def make_start_secs(t):
 # ===============================
 df = pd.read_csv(INPUT_CSV)
 
-print("08 INPUT rows:", len(df))
-print("08 INPUT HHIDs:", df["hhid"].nunique())
-
 # normalize times
 df["start_dt"] = df["start_time"].apply(to_dt)
 df["end_dt"]   = df["end_time"].apply(to_dt)
@@ -70,7 +67,6 @@ df = df.sort_values(
 # ===============================
 # GROUP CONTIGUOUS SESSIONS
 # ===============================
-print("08 INPUT rows:", len(df))
 grouped_rows = []
 current = None
 
@@ -95,31 +91,14 @@ for _, row in df.iterrows():
     )
 
     # merge if same member + channel and continuous
-    gap = abs((row["start_dt"] - current["end_dt"]).total_seconds())
-
-    if key == prev_key and gap <= 1:
-        
-        print(
-            f"MERGED | HHID={row['hhid']} "
-            f"member={row['member_id']} "
-            f"channel={row['chname']} "
-            f"gap={gap} "
-            f"{current['start_time']}->{current['end_time']} "
-            f"WITH "
-            f"{row['start_time']}->{row['end_time']}"
-        )
-
+    if (
+        key == prev_key and
+        abs((row["start_dt"] - current["end_dt"]).total_seconds()) <= 1
+    ):
         current["end_dt"] = row["end_dt"]
         current["duration_seconds"] += row["duration_seconds"]
-    else:
-        if key == prev_key:
-            print(
-                f"NOT MERGED | HHID={row['hhid']} "
-                f"member={row['member_id']} "
-                f"channel={row['chname']} "
-                f"gap={gap}"
-            )
 
+    else:
         grouped_rows.append(current)
         current = row.copy()
 
@@ -130,8 +109,6 @@ if current is not None:
 # ===============================
 # FINALIZE OUTPUT
 # ===============================
-print("GROUPED rows:", len(grouped_rows))
-print("ROWS MERGED:", len(df) - len(grouped_rows))
 final_df = pd.DataFrame(grouped_rows)
 
 final_df["start_time"] = final_df["start_dt"].apply(to_str)
@@ -157,9 +134,6 @@ final_df = final_df[
     ]
 ]
 
-print("Rows written to fp_sessions:", len(final_df))
-
-print("08 OUTPUT rows:", len(final_df))
 final_df.to_csv(OUTPUT_CSV, index=False)
 
 print(f" Member-grouped sessions written to {OUTPUT_CSV}")
