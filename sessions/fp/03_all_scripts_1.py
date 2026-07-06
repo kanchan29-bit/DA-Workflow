@@ -6,6 +6,7 @@ import os
 from datetime import datetime, timezone, timedelta
 import psycopg2
 from sqlalchemy import create_engine
+import numpy as np
 
 from dotenv import load_dotenv
 
@@ -47,7 +48,6 @@ YEREVAN_TZ = timezone(timedelta(hours=4))
 # ==========================================================
 today = datetime.now().date()
 yesterday = today - timedelta(days=1)
-
 expected_files = []
 
 # D-1 -> hours 02 to 23
@@ -87,11 +87,20 @@ for file_path in sorted(expected_files):
     if "meter_ts" not in df.columns:
         raise ValueError(f"meter_ts missing in {file_path}")
 
+    # df["timestamp"] = (
+    #     pd.to_datetime(df["meter_ts"], format="%Y%m%d_%H%M%S", errors="coerce")
+    #     .dt.tz_localize(YEREVAN_TZ)
+    #     .dt.tz_convert(timezone.utc)
+    #     .astype("int64") // 1000000000
+    # )
+
     df["timestamp"] = (
-        pd.to_datetime(df["meter_ts"], format="%Y%m%d_%H%M%S", errors="coerce")
-        .dt.tz_localize(YEREVAN_TZ)
-        .dt.tz_convert(timezone.utc)
-        .astype("int64") // 10**9
+    pd.to_datetime(df["meter_ts"], format="%Y%m%d_%H%M%S", errors="coerce")
+      .dt.tz_localize("Asia/Yerevan")
+      .dt.tz_convert(timezone.utc)
+      .to_numpy()
+      .astype("datetime64[s]")
+      .astype(np.int64)
     )
 
     dfs.append(df)

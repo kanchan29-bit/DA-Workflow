@@ -1,18 +1,12 @@
 import pandas as pd
 import os
-from datetime import datetime, timedelta
 
 # ===============================
 # FILE PATHS
 # ===============================
-# Get project root directory
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
-
-yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
-INPUT_FILE = os.path.join(BASE_DIR, "statement_file", "qualifier_output", f"{yesterday}_ruled_PROCESSED.csv")
-OUTPUT_FOLDER = os.path.join(BASE_DIR, "statement_file", "statement")
-OUTPUT_FILE_NAME = f"{yesterday}_statement.csv"
+INPUT_FILE = "/content/cleaned/01-07-2026_ruled_PROCESSED.csv"
+OUTPUT_FOLDER = "output_folder"
+OUTPUT_FILE_NAME = "01-07-2026_statement.csv"
 
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 

@@ -4,6 +4,7 @@
 
 import pandas as pd
 import os
+import hashlib
 from datetime import datetime, timedelta
 
 # ============================================================
@@ -92,6 +93,41 @@ def get_band_ranges(start, end):
 
     return bands
 
+from decimal import Decimal, getcontext
+
+getcontext().prec = 28
+
+def deterministic_allocate(total_seconds, shares):
+
+    shares = [Decimal(str(x)) for x in shares]
+
+    total_share = sum(shares)
+
+    if total_share == 0:
+        return [0] * len(shares)
+
+    raw = [
+        (s / total_share) * Decimal(total_seconds)
+        for s in shares
+    ]
+
+    alloc = [int(x) for x in raw]
+
+    remaining = total_seconds - sum(alloc)
+
+    remainders = sorted(
+        [
+            (raw[i] - Decimal(alloc[i]), i)
+            for i in range(len(raw))
+        ],
+        reverse=True
+    )
+
+    for _, idx in remainders[:remaining]:
+        alloc[idx] += 1
+
+    return alloc
+
 # ============================================================
 # LOAD DATA (UNCHANGED)
 # ============================================================
@@ -100,6 +136,9 @@ df = pd.read_csv(INPUT_FILE)
 panel = pd.read_excel(PANEL_FILE)
 cvf = pd.read_csv(CVF_FILE)
 dist = pd.read_csv(DIST_FILE)
+
+dist["Share"] = dist["Share"].round(5)
+dist["New_Share"] = dist["New_Share"].round(5)
 
 df.columns = df.columns.str.strip().str.lower()
 
@@ -123,6 +162,39 @@ dist = dist.rename(columns={'gende': 'gender'})
 dist['Age_Group'] = dist['Age_Group'].astype(str).str.strip()
 dist['gender'] = dist['gender'].astype(str).str.strip().str.capitalize()
 
+panel = (
+    panel
+    .sort_values(
+        ["hhid", "member_id"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
+
+cvf = (
+    cvf
+    .sort_values(
+        ["City_Group", "HH_Size_Group", "Time_Band"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
+
+dist = (
+    dist
+    .sort_values(
+        [
+            "City_Group",
+            "HH_Size_Group",
+            "Time_Band",
+            "Age_Group",
+            "gender"
+        ],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
+
 # ============================================================
 # TIME FIX (UNCHANGED)
 # ============================================================
@@ -133,6 +205,14 @@ df['end_time'] = pd.to_datetime(df['s3_date'].astype(str) + ' ' + df['end_time']
 df.loc[df['end_time'] < df['start_time'], 'end_time'] += pd.Timedelta(days=1)
 
 df['duration_seconds'] = (df['end_time'] - df['start_time']).dt.total_seconds().astype(int)
+df = (
+    df
+    .sort_values(
+        ["hhid", "start_time", "end_time"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
 
 # ============================================================
 # SPLIT INTO TIME BANDS (UNCHANGED)
@@ -154,7 +234,6 @@ for _, r in df.iterrows():
 df = pd.DataFrame(split_rows)
 
 print("After split rows:", len(df))
-
 # ============================================================
 # IDENTIFY MISSING HHIDs (UNCHANGED)
 # ============================================================
@@ -179,6 +258,14 @@ for _, r in missing_df.iterrows():
     hh = r['hhid']
 
     members = panel[panel['hhid'] == hh]
+    members = (
+    members
+    .sort_values(
+        "member_id",
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+    )
 
     if len(members) == 0:
         output.append(r)
@@ -196,7 +283,7 @@ for _, r in missing_df.iterrows():
         (cvf['Time_Band'] == band)
     ]
 
-    cvf_val = float(cvf_row.iloc[0]['CVF']) if len(cvf_row) > 0 else 1.0
+    cvf_val = round(float(cvf_row.iloc[0]["CVF"]), 2) if len(cvf_row) > 0 else 1.0
     expanded_total = int(base_total * cvf_val)
 
     # DISTRIBUTION
@@ -218,7 +305,15 @@ for _, r in missing_df.iterrows():
         continue
 
     d = d.copy()
-    d['New_Share'] = d['New_Share'] / d['New_Share'].sum()
+    d = (
+    d
+    .sort_values(
+        ["Age_Group", "gender"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+    )
+    d['New_Share'] = (d['New_Share'] / d['New_Share'].sum()).round(5)
 
     member_list, share_list, new_share_list = [], [], []
 
@@ -259,22 +354,26 @@ for _, r in missing_df.iterrows():
     active_count = max(1, int(round(cvf_val)))
     active_count = min(active_count, positive_count)
 
-    try:
-        temp_df = temp_df.sample(
-            n=active_count,
-            weights='new_share',
-            replace=False,
-            random_state=42
-        )
-    except:
-        temp_df = temp_df.nlargest(active_count, 'new_share')
+    temp_df = (
+    temp_df
+    .sort_values(
+        ["new_share", "share"],
+        ascending=[False, False],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+    )
+
+    temp_df = temp_df.head(active_count)
 
     member_list = temp_df['member'].tolist()
     share_list = temp_df['share'].tolist()
     new_share_list = temp_df['new_share'].tolist()
 
-    alloc = (pd.Series(new_share_list) / sum(new_share_list) * expanded_total).round().astype(int).tolist()
-    alloc[-1] += expanded_total - sum(alloc)
+    alloc = deterministic_allocate(
+        expanded_total,
+        new_share_list
+    )
 
     rank_order = sorted(range(len(new_share_list)), key=lambda x: new_share_list[x], reverse=True)
 
@@ -303,7 +402,17 @@ for _, r in missing_df.iterrows():
         if rank == 0:
             member_start, member_end = start, end_time
         else:
-            shift = (hash(str(m['member_id'])) % 60) * (-1 if hash(str(m['member_id'])) % 2 == 0 else 1)
+            
+            member_key = str(m["member_id"])
+
+            hash_value = int(
+                hashlib.md5(member_key.encode("utf-8")).hexdigest(),
+                16
+            )
+
+            shift = (hash_value % 60) * (
+                -1 if hash_value % 2 == 0 else 1
+            )
             center = start + timedelta(seconds=(session_duration / 2) + shift)
 
             member_start = center - timedelta(seconds=final_sec / 2)
@@ -352,6 +461,15 @@ final['duration'] = final['duration_seconds'].apply(
 
 final['start_time'] = final['start_time'].dt.strftime('%H:%M:%S')
 final['end_time'] = final['end_time'].dt.strftime('%H:%M:%S')
+
+final = (
+    final
+    .sort_values(
+        ["hhid", "start_time", "end_time", "member_id"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
 
 final.to_csv(OUTPUT_FILE, index=False, encoding="utf-8-sig")
 

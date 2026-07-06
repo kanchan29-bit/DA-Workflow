@@ -247,7 +247,7 @@ def process_file(file_path: str):
     # --------------------------------------------------------
     if "date" in df.columns and not df["date"].isna().all():
         # Convert date if needed
-        first_date = df["date"].iloc[0]
+        first_date = df["date"].mode()[0]  # Most common date in the file
         if isinstance(first_date, str):
             try:
                 date_obj = datetime.strptime(first_date, "%Y-%m-%d")

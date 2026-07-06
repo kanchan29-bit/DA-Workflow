@@ -113,7 +113,24 @@ final_df = pd.DataFrame(grouped_rows)
 
 final_df["start_time"] = final_df["start_dt"].apply(to_str)
 final_df["end_time"]   = final_df["end_dt"].apply(to_str)
-final_df["duration"]   = final_df["duration_seconds"].apply(sec_to_hms)
+# ==========================================
+# Recalculate duration (handles midnight crossing)
+# ==========================================
+def calculate_duration_seconds(start_td, end_td):
+    """
+    Returns correct duration even if end_time is after midnight.
+    """
+    if end_td < start_td:
+        end_td += timedelta(days=1)
+
+    return int((end_td - start_td).total_seconds())
+
+final_df["duration_seconds"] = final_df.apply(
+    lambda r: calculate_duration_seconds(r["start_dt"], r["end_dt"]),
+    axis=1
+)
+
+final_df["duration"] = final_df["duration_seconds"].apply(sec_to_hms)
 
 final_df = final_df.drop(columns=["start_dt", "end_dt"])
 

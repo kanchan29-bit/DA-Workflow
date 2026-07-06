@@ -78,6 +78,16 @@ end_ts = int(end_dt_local.astimezone(pytz.UTC).timestamp())
 print(f"UTC Timestamp Range: {start_ts} to {end_ts}")
 
 # -------------------------------
+# CREATED AT CUTOFF (END + 6 HOURS )
+# -------------------------------
+created_at_limit = end_dt_local.astimezone(pytz.UTC) + timedelta(hours=6)
+
+created_at_limit_str = created_at_limit.strftime("%Y-%m-%d %H:%M:%S%z")
+
+print(f"UTC Timestamp Range: {start_ts} to {end_ts}")
+print(f"createdAt Cutoff (UTC): {created_at_limit}")
+
+# -------------------------------
 # SQL QUERY
 # -------------------------------
 device_ids_str = ",".join([f"'{d}'" for d in device_list])
@@ -85,8 +95,9 @@ device_ids_str = ",".join([f"'{d}'" for d in device_list])
 query = f"""
 SELECT *
 FROM events
-WHERE type IN ('42','23','3','4')
+WHERE type IN ('3','4')
   AND timestamp BETWEEN {start_ts} AND {end_ts}
+  AND "createdAt" <= TIMESTAMPTZ '{created_at_limit_str}'
   AND device_id IN ({device_ids_str})
 ORDER BY device_id ASC, timestamp ASC;
 """

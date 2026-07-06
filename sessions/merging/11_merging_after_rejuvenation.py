@@ -11,7 +11,7 @@ yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BASE_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
 
-file1_csv = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation", f"{yesterday}_Members_Updatedlogo.csv")
+file1_csv = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation", f"{yesterday}_Members_UpdatedLOGO.csv")
 file2_csv = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation", f"{yesterday}_Members_UpdatedFP.csv")
 
 output_csv = os.path.join(BASE_DIR, "sessions", "merging", "Final_merged_file", f"{yesterday}_Sessions.csv")
@@ -26,6 +26,13 @@ HHID_COL = "hhid"         # change if your column name is different
 # ===============================
 df1 = pd.read_csv(file1_csv)
 df2 = pd.read_csv(file2_csv)
+
+print("File1 unique HHIDs:", df1[HHID_COL].nunique())
+print("File2 unique HHIDs:", df2[HHID_COL].nunique())
+
+common = set(df1[HHID_COL]).intersection(set(df2[HHID_COL]))
+print("Common HHIDs:", len(common))
+print("Total rows in file2:", len(df2))
 
 # ===============================
 # REMOVE DUPLICATE HHIDs FROM FILE 2
@@ -59,5 +66,3 @@ print(f"Merge complete. Output saved to: {output_csv}")
 print(f"Rows in file1        : {len(df1)}")
 print(f"Rows kept from file2 : {len(df2_filtered)}")
 print(f"Total rows merged    : {len(merged_df)}")
-
-

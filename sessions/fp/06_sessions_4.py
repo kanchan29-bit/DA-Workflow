@@ -49,19 +49,38 @@ def seconds_to_hhmmss(sec):
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 
-# ===============================
-# READ DATA
-# ===============================
 df = pd.read_csv(INPUT_CSV)
+
+# Deterministic sort
+df = df.sort_values(
+    by=[
+        "hhid",
+        "timestamp",
+        "start_time",
+        "chid",
+        "device_id",
+        "details"
+    ],
+    kind="mergesort"
+).reset_index(drop=True)
 
 # Keep only channel recognition events
 df = df[df["type"] == 42].copy()
 
-# Sort correctly
-df = df.sort_values(["hhid", "timestamp"]).reset_index(drop=True)
-
 # Convert start_time to seconds
 df["start_secs"] = df["start_time"].apply(hhmmss_to_broadcast_seconds)
+
+# Sort correctly
+df = df.sort_values(
+    by=[
+        "hhid",
+        "timestamp",
+        "start_secs",
+        "device_id",
+        "details"
+    ],
+    kind="mergesort"
+).reset_index(drop=True)
 
 # ===============================
 # SESSION IDENTIFICATION
@@ -86,7 +105,15 @@ sessions = []
 
 for (hhid, session_id), grp in df.groupby(["hhid", "session_id"]):
 
-    grp = grp.sort_values("timestamp")
+    grp = grp.sort_values(
+    by=[
+        "timestamp",
+        "start_secs",
+        "device_id",
+        "details"
+        ],
+        kind="mergesort"
+    )
 
     first = grp.iloc[0]
     last = grp.iloc[-1]
@@ -171,6 +198,16 @@ for (hhid, session_id), grp in df.groupby(["hhid", "session_id"]):
 # OUTPUT
 # ===============================
 sessions_df = pd.DataFrame(sessions)
+
+sessions_df = sessions_df.sort_values(
+    by=[
+        "hhid",
+        "s3_date",
+        "start_time"
+    ],
+    kind="mergesort"
+).reset_index(drop=True)
+
 sessions_df.to_csv(OUTPUT_CSV, index=False)
 
 print(f"Sessionization complete. Output written to {OUTPUT_CSV}")

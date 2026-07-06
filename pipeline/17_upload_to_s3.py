@@ -62,24 +62,24 @@ UPLOADS = [
         "category": "fp",
         "filename": "fp_sessions.csv",
     },
-
-    # --- Merging: Sessions without rejuvenation ---
     {
-        "local": os.path.join("sessions", "merging", "sessions_without_rejuvenation", f"{date_ymd}_Sessions.csv"),
-        "category": "merging",
-        "filename": "Sessions_without_rejuvenation.csv",
+        "local": os.path.join("sessions", "fp", "output", f"sessions_output.csv"),
+        "category": "fp",
+        "filename": "hh_fp_sessions.csv",
     },
+
+
 
     # --- Merging: Sessions with rejuvenation (Logo) ---
     {
-        "local": os.path.join("sessions", "merging", "sessions_with_rejuvenation", f"{date_ymd}Members_Updatedlogo.csv"),
+        "local": os.path.join("sessions", "merging", "sessions_with_rejuvenation", f"{date_ymd}_Members_UpdatedLOGO.csv"),
         "category": "merging",
         "filename": "Sessions_with_rejuvenation_logo.csv",
     },
 
     # --- Merging: Sessions with rejuvenation (FP) ---
     {
-        "local": os.path.join("sessions", "merging", "sessions_with_rejuvenation", f"{date_ymd}Members_UpdatedFP.csv"),
+        "local": os.path.join("sessions", "merging", "sessions_with_rejuvenation", f"{date_ymd}_Members_UpdatedFP.csv"),
         "category": "merging",
         "filename": "Sessions_with_rejuvenation_FP.csv",
     },
@@ -96,6 +96,16 @@ UPLOADS = [
         "local": os.path.join("for_panel_files", "for_panel", f"{date_ymd}_cleaned.csv"),
         "category": "for_panel",
         "filename": "cleaned.csv",
+    },
+    {
+        "local": os.path.join("Panel","Panel Files", f"{date_dmy}_combined_weighted.csv"),
+        "category": "for_panel",
+        "filename": "Panel.csv",
+    },
+    {
+        "local": os.path.join("Panel", "Panel Files", f"{date_dmy}_summary.csv"),
+        "category": "for_panel",
+        "filename": "Panel_summary.csv",
     },
 
     # --- Qualifier: Ruled file ---

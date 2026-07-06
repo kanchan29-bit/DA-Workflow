@@ -5,6 +5,7 @@
 
 import pandas as pd
 import os
+import hashlib
 from datetime import datetime, timedelta
 
 # ============================================================
@@ -21,6 +22,8 @@ CVF_FILE   = os.path.join(BASE_DIR, "sessions", "merging", "cvf_table.csv")
 DIST_FILE  = os.path.join(BASE_DIR, "sessions", "merging", "distribution_table_backoff_completed.csv")
 
 OUTPUT_PATH = os.path.join(BASE_DIR, "sessions", "merging", "sessions_with_rejuvenation")
+
+
 
 # ============================================================
 # D-1 DATE (UNCHANGED)
@@ -58,7 +61,7 @@ os.makedirs(OUTPUT_PATH, exist_ok=True)
 
 OUTPUT_FILE = os.path.join(
     OUTPUT_PATH,
-    f"{date_str}_Members_Updatedlogo.csv"
+    f"{date_str}_Members_UpdatedLOGO.csv"
 )
 
 TXT_OUTPUT_FILE = OUTPUT_FILE.replace(".csv", ".txt")
@@ -68,54 +71,65 @@ TXT_OUTPUT_FILE = OUTPUT_FILE.replace(".csv", ".txt")
 # ============================================================
 
 def get_band_ranges(start, end):
-
     bands = []
     current = start
 
     while current < end:
-
         date = current.date()
 
         day_start = pd.Timestamp(f"{date} 06:00:00")
         prime_start = pd.Timestamp(f"{date} 18:00:00")
+        next_midnight = pd.Timestamp(f"{date} 23:59:59") + pd.Timedelta(seconds=1)
 
-        next_midnight = (
-            pd.Timestamp(f"{date} 23:59:59")
-            + pd.Timedelta(seconds=1)
-        )
-
-        # =========================
-        # LATE NIGHT
-        # 00:00 → 05:59
-        # =========================
         if current < day_start:
-
             band_end = min(day_start, end)
             band = "Late Night"
-
-        # =========================
-        # DAY
-        # 06:00 → 17:59
-        # =========================
         elif current < prime_start:
-
             band_end = min(prime_start, end)
             band = "Day"
-
-        # =========================
-        # PRIME
-        # 18:00 → 23:59
-        # =========================
         else:
-
             band_end = min(next_midnight, end)
             band = "Prime"
 
         bands.append((current, band_end, band))
-
         current = band_end
 
     return bands
+
+from decimal import Decimal, getcontext
+
+getcontext().prec = 28
+
+def deterministic_allocate(total_seconds, shares):
+
+    shares = [Decimal(str(x)) for x in shares]
+
+    total_share = sum(shares)
+
+    if total_share == 0:
+        return [0] * len(shares)
+
+    raw = [
+        (s / total_share) * Decimal(total_seconds)
+        for s in shares
+    ]
+
+    alloc = [int(x) for x in raw]
+
+    remaining = total_seconds - sum(alloc)
+
+    remainders = sorted(
+        [
+            (raw[i] - Decimal(alloc[i]), i)
+            for i in range(len(raw))
+        ],
+        reverse=True
+    )
+
+    for _, idx in remainders[:remaining]:
+        alloc[idx] += 1
+
+    return alloc
 
 # ============================================================
 # LOAD DATA (UNCHANGED)
@@ -125,6 +139,9 @@ df = pd.read_csv(INPUT_FILE)
 panel = pd.read_excel(PANEL_FILE)
 cvf = pd.read_csv(CVF_FILE)
 dist = pd.read_csv(DIST_FILE)
+
+dist["Share"] = dist["Share"].round(5)
+dist["New_Share"] = dist["New_Share"].round(5)
 
 df.columns = df.columns.str.strip().str.lower()
 
@@ -141,39 +158,73 @@ panel = panel.rename(columns={
 
 panel = panel[['hhid','member_id','Age_Group','gender','HH_Size_Group','City_Group']]
 
-# =========================
-# CLEAN DATA (CRITICAL FIX)  INSERT HERE
-# =========================
-
 panel['Age_Group'] = panel['Age_Group'].astype(str).str.strip()
 panel['gender'] = panel['gender'].astype(str).str.strip().str.capitalize()
 
 dist = dist.rename(columns={'gende': 'gender'})
-
 dist['Age_Group'] = dist['Age_Group'].astype(str).str.strip()
 dist['gender'] = dist['gender'].astype(str).str.strip().str.capitalize()
 
-# =========================
-# TIME FIX
-# =========================
+panel = (
+    panel
+    .sort_values(
+        ["hhid", "member_id"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
+
+cvf = (
+    cvf
+    .sort_values(
+        ["City_Group", "HH_Size_Group", "Time_Band"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
+
+dist = (
+    dist
+    .sort_values(
+        [
+            "City_Group",
+            "HH_Size_Group",
+            "Time_Band",
+            "Age_Group",
+            "gender"
+        ],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
+
+# ============================================================
+# TIME FIX (UNCHANGED)
+# ============================================================
+
 df['start_time'] = pd.to_datetime(df['date'].astype(str) + ' ' + df['start_time'].astype(str))
 df['end_time'] = pd.to_datetime(df['date'].astype(str) + ' ' + df['end_time'].astype(str))
 
 df.loc[df['end_time'] < df['start_time'], 'end_time'] += pd.Timedelta(days=1)
 
 df['duration_seconds'] = (df['end_time'] - df['start_time']).dt.total_seconds().astype(int)
+df = (
+    df
+    .sort_values(
+        ["hhid", "start_time", "end_time"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
 
-# =========================
-# SPLIT INTO TIME BANDS (NEW STEP)
-# =========================
+# ============================================================
+# SPLIT INTO TIME BANDS (UNCHANGED)
+# ============================================================
+
 split_rows = []
 
 for _, r in df.iterrows():
-
-    start = r['start_time']
-    end = r['end_time']
-
-    splits = get_band_ranges(start, end)
+    splits = get_band_ranges(r['start_time'], r['end_time'])
 
     for s, e, band in splits:
         new_r = r.copy()
@@ -181,29 +232,25 @@ for _, r in df.iterrows():
         new_r['end_time'] = e
         new_r['duration_seconds'] = int((e - s).total_seconds())
         new_r['Time_Band'] = band
-
         split_rows.append(new_r)
 
 df = pd.DataFrame(split_rows)
 
-print(" After split rows:", len(df))
+print("After split rows:", len(df))
+# ============================================================
+# IDENTIFY MISSING HHIDs (UNCHANGED)
+# ============================================================
 
-# =========================
-# SPLIT HHIDs
-# =========================
 hh_missing_flag = df.groupby('hhid')['member_id'].apply(lambda x: x.isna().all())
 missing_hhids = hh_missing_flag[hh_missing_flag].index
 
 missing_df = df[df['hhid'].isin(missing_hhids)].copy()
 valid_df = df[~df['hhid'].isin(missing_hhids)].copy()
 
-print("Total HHIDs:", df['hhid'].nunique())
-print("Fully Missing HHIDs:", len(missing_hhids))
+# ============================================================
+# ATTRIBUTION (REPLACED CORE LOGIC)
+# ============================================================
 
-
-# =========================
-# ATTRIBUTION
-# =========================
 output = []
 member_time_tracker = {}
 
@@ -211,9 +258,17 @@ for _, r in missing_df.iterrows():
 
     start = r['start_time']
     end_time = r['end_time']
-
     hh = r['hhid']
+
     members = panel[panel['hhid'] == hh]
+    members = (
+    members
+    .sort_values(
+        "member_id",
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+    )
 
     if len(members) == 0:
         output.append(r)
@@ -222,25 +277,19 @@ for _, r in missing_df.iterrows():
     city = members['City_Group'].iloc[0]
     size = members['HH_Size_Group'].iloc[0]
     base_total = int(r['duration_seconds'])
-
-
     band = r['Time_Band']
 
-    # =========================
-    # GET CVF
-    # =========================
+    # CVF
     cvf_row = cvf[
         (cvf['City_Group'] == city) &
         (cvf['HH_Size_Group'] == size) &
         (cvf['Time_Band'] == band)
     ]
 
-    cvf_val = float(cvf_row.iloc[0]['CVF']) if len(cvf_row) > 0 else 1.0
+    cvf_val = round(float(cvf_row.iloc[0]["CVF"]), 2) if len(cvf_row) > 0 else 1.0
     expanded_total = int(base_total * cvf_val)
 
-    # =========================
-    # GET DISTRIBUTION
-    # =========================
+    # DISTRIBUTION
     d = dist[
         (dist.City_Group == city) &
         (dist.HH_Size_Group == size) &
@@ -248,27 +297,28 @@ for _, r in missing_df.iterrows():
     ]
 
     if len(d) == 0:
-        fallback = r.copy()
         m = members.iloc[0]
-
+        fallback = r.copy()
         fallback['member_id'] = m['member_id']
         fallback['gender'] = m['gender']
         fallback['Age_Group'] = m['Age_Group']
-        fallback['HH_Size_Group'] = m['HH_Size_Group']
-        fallback['City_Group'] = m['City_Group']
-
+        fallback['HH_Size_Group'] = size
+        fallback['City_Group'] = city
         output.append(fallback)
         continue
 
     d = d.copy()
-    d['New_Share'] = d['New_Share'] / d['New_Share'].sum()
+    d = (
+    d
+    .sort_values(
+        ["Age_Group", "gender"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+    )
+    d['New_Share'] = (d['New_Share'] / d['New_Share'].sum()).round(5)
 
-    # =========================
-    # BUILD MEMBER LIST
-    # =========================
-    member_list = []
-    share_list = []
-    new_share_list = []
+    member_list, share_list, new_share_list = [], [], []
 
     for _, row_d in d.iterrows():
         seg_members = members[
@@ -282,86 +332,56 @@ for _, r in missing_df.iterrows():
             new_share_list.append(row_d['New_Share'])
 
     if len(member_list) == 0:
-        fallback = r.copy()
         m = members.iloc[0]
-
+        fallback = r.copy()
         fallback['member_id'] = m['member_id']
         fallback['gender'] = m['gender']
         fallback['Age_Group'] = m['Age_Group']
-        fallback['HH_Size_Group'] = m['HH_Size_Group']
-        fallback['City_Group'] = m['City_Group']
-
+        fallback['HH_Size_Group'] = size
+        fallback['City_Group'] = city
         output.append(fallback)
         continue
 
-    # =========================
-    # CVF FILTERING
-    # =========================
     temp_df = pd.DataFrame({
         'member': member_list,
         'share': share_list,
         'new_share': new_share_list
     })
-# Remove zero-weight rows
-    temp_df = temp_df[temp_df['new_share'] > 0].copy()
+
+    temp_df = temp_df[temp_df['new_share'] > 0]
 
     if len(temp_df) == 0:
-        print(f"No valid distribution for HHID {hh}")
         continue
 
-    positive_count = (temp_df['new_share'] > 0).sum()
-
-    active_count = int(round(cvf_val))
-    active_count = max(1, active_count)
-
-    # Cannot sample more than positive-weight rows
+    positive_count = len(temp_df)
+    active_count = max(1, int(round(cvf_val)))
     active_count = min(active_count, positive_count)
 
-    print("HHID:", hh)
-    print("CVF:", cvf_val)
-    print("active_count:", active_count)
-    print("rows available:", len(temp_df))
-    print("positive weights:", positive_count)
+    temp_df = (
+    temp_df
+    .sort_values(
+        ["new_share", "share"],
+        ascending=[False, False],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+    )
 
-    try:
-        temp_df = temp_df.sample(
-            n=active_count,
-            weights='new_share',
-            replace=False,
-            random_state=42
-        )
-    except ValueError:
-        print(f"Fallback used for HHID {hh}")
-        temp_df = temp_df.nlargest(active_count, 'new_share')
-    except Exception as e:
-        print(f"Sampling error for HHID {hh}")
-        print(temp_df[['new_share']])
-        raise
+    temp_df = temp_df.head(active_count)
 
     member_list = temp_df['member'].tolist()
     share_list = temp_df['share'].tolist()
     new_share_list = temp_df['new_share'].tolist()
 
-    # =========================
-    # ALLOCATION
-    # =========================
-    alloc = pd.Series(new_share_list)
-    alloc = (alloc / alloc.sum()) * expanded_total
-    alloc = alloc.round().astype(int).tolist()
+    alloc = deterministic_allocate(
+        expanded_total,
+        new_share_list
+    )
 
-    diff = expanded_total - sum(alloc)
-    alloc[-1] += diff
-
-    # =========================
-    # SORT FOR RANKING
-    # =========================
     rank_order = sorted(range(len(new_share_list)), key=lambda x: new_share_list[x], reverse=True)
 
     session_duration = int((end_time - start).total_seconds())
 
-    # =========================
-    # ASSIGN WINDOWS
-    # =========================
     for i in range(len(alloc)):
 
         dur = alloc[i]
@@ -369,75 +389,51 @@ for _, r in missing_df.iterrows():
             continue
 
         m = member_list[i]
-
         key = (hh, m['member_id'])
-        current_total = member_time_tracker.get(key, 0)
 
+        current_total = member_time_tracker.get(key, 0)
         remaining_allowed = 86400 - current_total
+
         if remaining_allowed <= 0:
             continue
 
-        final_sec = min(dur, remaining_allowed)
-        #  FIX 4: Ensure member duration never exceeds session
-        session_duration = int((end_time - start).total_seconds())
-        final_sec = min(final_sec, session_duration)
+        final_sec = min(dur, remaining_allowed, session_duration)
         member_time_tracker[key] = current_total + final_sec
 
         rank = rank_order.index(i)
 
-        # =========================
-        # SAFE PROPORTIONAL WINDOW (STRICT SESSION BOUND)
-        # =========================
-
         if rank == 0:
-            # MAIN MEMBER → full session
-            member_start = start
-            member_end = end_time
+            member_start, member_end = start, end_time
         else:
-            member_duration = final_sec
+            
+            member_key = str(m["member_id"])
 
-            session_duration = int((end_time - start).total_seconds())
+            hash_value = int(
+                hashlib.md5(member_key.encode("utf-8")).hexdigest(),
+                16
+            )
 
-            # If member duration >= session → clamp to session
-            if member_duration >= session_duration:
+            shift = (hash_value % 60) * (
+                -1 if hash_value % 2 == 0 else 1
+            )
+            center = start + timedelta(seconds=(session_duration / 2) + shift)
+
+            member_start = center - timedelta(seconds=final_sec / 2)
+            member_end = member_start + timedelta(seconds=final_sec)
+
+            if member_start < start:
                 member_start = start
+                member_end = start + timedelta(seconds=final_sec)
+
+            if member_end > end_time:
                 member_end = end_time
-            else:
-                # =========================
-                # ADD SMALL SHIFT FOR SAME DEMO MEMBERS
-                # =========================
-                max_shift = 60  # max 60 seconds difference
+                member_start = end_time - timedelta(seconds=final_sec)
 
-                # deterministic shift using member_id
-                shift_seed = hash(str(m['member_id'])) % max_shift
-
-                # alternate left/right
-                direction = -1 if (hash(str(m['member_id'])) % 2 == 0) else 1
-                shift = direction * shift_seed
-
-                center_point = start + timedelta(seconds=(session_duration / 2) + shift)
-
-                member_start = center_point - timedelta(seconds=member_duration / 2)
-                member_end = member_start + timedelta(seconds=member_duration)
-                # STRICT CLAMP
-                if member_start < start:
-                    member_start = start
-                    member_end = start + timedelta(seconds=member_duration)
-
-                if member_end > end_time:
-                    member_end = end_time
-                    member_start = end_time - timedelta(seconds=member_duration)
         new_row = r.copy()
 
         new_row['start_time'] = member_start
         new_row['end_time'] = member_end
-        #  FIX 5: VALIDATION CHECK
-        if not (member_start >= start and member_end <= end_time):
-            print("ERROR:",
-                "HH:", hh,
-                "Member:", m['member_id'],
-                "Session:", start, "→", end_time,
-                "Member:", member_start, "→", member_end)
+
         actual_sec = int((member_end - member_start).total_seconds())
 
         new_row['duration_seconds'] = actual_sec
@@ -455,8 +451,6 @@ for _, r in missing_df.iterrows():
 
         output.append(new_row)
 
-
-
 # ============================================================
 # FINAL OUTPUT (UNCHANGED)
 # ============================================================
@@ -471,8 +465,18 @@ final['duration'] = final['duration_seconds'].apply(
 final['start_time'] = final['start_time'].dt.strftime('%H:%M:%S')
 final['end_time'] = final['end_time'].dt.strftime('%H:%M:%S')
 
+final = (
+    final
+    .sort_values(
+        ["hhid", "start_time", "end_time", "member_id"],
+        kind="mergesort"
+    )
+    .reset_index(drop=True)
+)
+
 final.to_csv(OUTPUT_FILE, index=False, encoding="utf-8-sig")
 
 print("FINAL DONE:", final.shape)
+
 
 

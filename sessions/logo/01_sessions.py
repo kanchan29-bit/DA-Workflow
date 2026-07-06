@@ -316,35 +316,64 @@ def calculate_duration_with_date(date_str: str, start_time_str: str, end_time_st
 # ============================================================================
 # DATABASE FUNCTIONS
 # ============================================================================
-
 def fetch_events_from_postgres(start_date_str, end_date_str, db_config):
-    """Query events from events_with_hhid table in PostgreSQL"""
-    # Parse input dates
-    start_dt_local = pd.Timestamp(f"{start_date_str} 02:00:00").tz_localize('Asia/Yerevan')
-    end_dt_local = pd.Timestamp(f"{end_date_str} 01:59:59") + pd.Timedelta(days=1)
-    end_dt_local = end_dt_local.tz_localize('Asia/Yerevan')
-
-    # Convert to UTC for querying Postgres
-    start_ts = int(start_dt_local.tz_convert('UTC').timestamp())
-    end_ts = int(end_dt_local.tz_convert('UTC').timestamp())
-
-    query = f"""
-    SELECT *
-    FROM events_with_assigned_hhid
-    WHERE type IN ('29','30', '23','3','4')
-      AND timestamp BETWEEN {start_ts} AND {end_ts}
-    ORDER BY hhid ASC, timestamp ASC;
     """
-    print(f" Querying events from {start_dt_local} to {end_dt_local} (UNIX: {start_ts} -> {end_ts})")
-    
-    # Create SQLAlchemy engine for proper pandas/PostgreSQL integration
-    engine = create_engine(
-        f"postgresql+psycopg2://{db_config['user']}:{db_config['password']}@{db_config['host']}:{db_config['port']}/{db_config['dbname']}"
+    Fetch events from the view and include only those whose event timestamp
+    is within the requested period and whose createdAt is not later than
+    6 hours after the end of the requested period.
+    """
+
+    # ==========================================================
+    # Event timestamp window (same as existing logic)
+    # ==========================================================
+    start_dt_local = pd.Timestamp(
+        f"{start_date_str} 02:00:00"
+    ).tz_localize("Asia/Yerevan")
+
+    end_dt_local = (
+        pd.Timestamp(f"{end_date_str} 01:59:59") + pd.Timedelta(days=1)
+    ).tz_localize("Asia/Yerevan")
+
+    # Convert to UTC Unix timestamps
+    start_ts = int(start_dt_local.tz_convert("UTC").timestamp())
+    end_ts = int(end_dt_local.tz_convert("UTC").timestamp())
+
+    # ==========================================================
+    # createdAt upper limit (6 hours after end)
+    # ==========================================================
+    created_at_limit = (
+        end_dt_local.tz_convert("UTC") + pd.Timedelta(hours=6)
     )
-    
-    df = pd.read_sql(query, engine)
-    engine.dispose()
-    print(f" Fetched {len(df)} rows from events_with_assigned_hhid table")
+
+    created_at_limit_str = created_at_limit.strftime("%Y-%m-%d %H:%M:%S%z")
+
+    print(f" Event timestamp range : {start_dt_local} : {end_dt_local}")
+    print(f" createdAt upper limit : {created_at_limit}")
+
+    # ==========================================================
+    # Query
+    # ==========================================================
+    query = f"""
+    SELECT v.*
+    FROM events_with_assigned_hhid v
+    INNER JOIN events e
+        ON v.id = e.id
+    WHERE v.type IN ('29','30','23','3','4')
+      AND v.timestamp BETWEEN {start_ts} AND {end_ts}
+      AND e."createdAt" <= TIMESTAMPTZ '{created_at_limit_str}'
+    ORDER BY v.hhid ASC, v.timestamp ASC;
+    """
+
+    print(query)
+
+    conn = psycopg2.connect(**db_config)
+
+    df = pd.read_sql(query, conn)
+
+    conn.close()
+
+    print(f" Fetched {len(df)} rows from events_with_assigned_hhid")
+
     return df
 
 
